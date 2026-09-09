@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Catálogo de Peces</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#0E2A2B" />
-<meta name="description" content="Catálogo de peces de agua dulce" />
+<meta name="description" content="Catálogo profesional de peces de agua dulce" />
 <link rel="manifest" href="manifest.json" />
 <link rel="stylesheet" href="style.css" />
 </head>
@@ -25,51 +25,93 @@
         <input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
       </div>
       <div id="loginError" class="login-error"></div>
-      <button id="loginBtn" class="save-btn" style="width:100%">Ingresar</button>
-      <div style="text-align:center;margin:12px 0;color:#7b8a8c">o</div>
-      <button id="googleLoginBtn" type="button" style="width:100%">Continuar con Google</button>
+      <button id="loginBtn" class="save-btn login-main-btn" style="width:100%">Ingresar</button>
+      <div class="login-or">o</div>
+      <button id="googleLoginBtn" class="google-btn" type="button">Continuar con Google</button>
     </div>
   </div>
 
   <div id="app" class="hidden">
     <header class="header">
-      <div class="header-left">
-        <span class="fish-icon">🐟</span>
-        <div>
-          <input id="storeName" class="store-name" value="Mi Acuario" maxlength="40" aria-label="Nombre del acuario" title="Nombre del acuario" />
-          <div class="store-sub">Catálogo de peces de agua dulce</div>
+      <div class="header-inner">
+        <div class="header-left">
+          <span class="fish-icon">🐟</span>
+          <div class="brand-block">
+            <input id="storeName" class="store-name" value="Mi Acuario" maxlength="40" aria-label="Nombre del acuario" title="Nombre del acuario" />
+            <div class="store-sub">Catálogo de peces de agua dulce</div>
+          </div>
         </div>
-      </div>
-      <div class="header-actions">
-        <button id="toggleView" class="toggle-btn">Vista interna</button>
-        <button id="logoutBtn" class="toggle-btn logout-btn">Salir</button>
+        <div class="header-actions">
+          <button id="toggleView" class="toggle-btn">Vista interna</button>
+          <button id="logoutBtn" class="toggle-btn logout-btn">Salir</button>
+        </div>
       </div>
     </header>
 
-    <div class="search-bar">
-      <input id="searchInput" type="search" autocomplete="off" placeholder="Buscar por nombre, científico o familia…" aria-label="Buscar especies" />
-    </div>
+    <main class="main">
+      <section class="hero-row">
+        <div>
+          <div class="eyebrow">MI COLECCIÓN</div>
+          <h1>Catálogo de peces</h1>
+          <p>Organiza y consulta tus especies de forma rápida.</p>
+        </div>
+        <button id="heroAddBtn" class="hero-add" type="button">＋ Agregar especie</button>
+      </section>
 
-    <div class="filter-row" id="filterZona"></div>
-    <div class="filter-row" id="filterCuidado"></div>
+      <section class="stats-strip" aria-label="Resumen del catálogo">
+        <div class="summary-card">
+          <span class="summary-icon">🐟</span>
+          <div><strong id="totalCount">0</strong><small>Especies</small></div>
+        </div>
+        <div class="summary-card">
+          <span class="summary-icon">👪</span>
+          <div><strong id="familyCount">0</strong><small>Familias</small></div>
+        </div>
+        <div class="summary-card">
+          <span class="summary-icon">💧</span>
+          <div><strong id="waterCount">0</strong><small>Zonas</small></div>
+        </div>
+        <div class="summary-card internal-only">
+          <span class="summary-icon">📦</span>
+          <div><strong id="stockCount">0</strong><small>En stock</small></div>
+        </div>
+      </section>
 
-    <div id="statusBanner"></div>
-    <div class="count-row" id="countRow"></div>
-    <div class="list" id="list"></div>
+      <section class="toolbar">
+        <div class="search-bar">
+          <span class="search-icon">⌕</span>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Buscar por nombre, científico o familia…" aria-label="Buscar especies" />
+          <button id="clearSearch" class="clear-search hidden" type="button" aria-label="Limpiar búsqueda">×</button>
+        </div>
+        <div class="toolbar-label">Filtrar por zona</div>
+        <div class="filter-row" id="filterZona"></div>
+        <div class="toolbar-label">Nivel de cuidado</div>
+        <div class="filter-row" id="filterCuidado"></div>
+      </section>
+
+      <div id="statusBanner"></div>
+
+      <section class="results-head">
+        <div class="count-row" id="countRow"></div>
+        <button id="clearFilters" class="clear-filters hidden" type="button">Limpiar filtros</button>
+      </section>
+
+      <div class="list" id="list"></div>
+    </main>
 
     <button id="fab" class="fab" type="button" title="Agregar especie" aria-label="Agregar especie">+</button>
   </div>
 
   <div id="modalOverlay" class="modal-overlay hidden">
-    <div class="modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="modal-head">
         <div class="modal-title" id="modalTitle">Agregar especie</div>
         <button id="closeModal" class="close-btn" type="button" aria-label="Cerrar">✕</button>
       </div>
       <div class="modal-body" id="modalBody"></div>
       <div class="modal-foot">
-        <button id="cancelBtn" class="cancel-btn">Cancelar</button>
-        <button id="saveBtn" class="save-btn">Guardar</button>
+        <button id="cancelBtn" class="cancel-btn" type="button">Cancelar</button>
+        <button id="saveBtn" class="save-btn" type="button">Guardar</button>
       </div>
     </div>
   </div>
