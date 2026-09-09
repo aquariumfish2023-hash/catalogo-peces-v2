@@ -1,31 +1,27 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
   getFirestore, collection, addDoc, updateDoc, deleteDoc, doc,
-  onSnapshot, query, orderBy,
+  onSnapshot, query, where,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import {
-  getStorage, ref, uploadString, getDownloadURL, deleteObject,
-} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
-import {
-  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup,
+  GoogleAuthProvider, signOut,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
-// ⚠️ PEGA AQUÍ el mismo firebaseConfig que usas en tu app de inventario.
-// Lo encuentras en la consola de Firebase: Configuración del proyecto → General → Tus apps → SDK setup.
+// Firebase del proyecto NUEVO: catalogo-peces-v2
 const firebaseConfig = {
-  apiKey: "AIzaSyBhmpkynU7Kl87UNge7aWwDhJ2Pm-TpVxk",
-  authDomain: "aquarium-fish-218a1.firebaseapp.com",
-  databaseURL: "https://aquarium-fish-218a1-default-rtdb.firebaseio.com",
-  projectId: "aquarium-fish-218a1",
-  storageBucket: "aquarium-fish-218a1.firebasestorage.app",
-  messagingSenderId: "629993722414",
-  appId: "1:629993722414:web:fa7d4f8ec7ec1f3d2f05bf",
+  apiKey: "AIzaSyC_JRvrypgjhvqvfrn9_ipgagw6fZ2jTWk",
+  authDomain: "catalogo-peces-v2.firebaseapp.com",
+  projectId: "catalogo-peces-v2",
+  storageBucket: "catalogo-peces-v2.firebasestorage.app",
+  messagingSenderId: "1031334048950",
+  appId: "1:1031334048950:web:81ce0255022a721a052217"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 const pecesCol = collection(db, "peces");
 
 const ZONAS = {
@@ -58,6 +54,8 @@ const $ = (id) => document.getElementById(id);
 const STORE_NAME_KEY = "catalogoPeces.storeName";
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 let guardando = false;
+let usuarioActual = null;
+const MAX_FIRESTORE_IMAGE_BYTES = 500 * 1024; // margen seguro bajo el límite de 1 MiB por documento
 
 function setStoreName(value) {
   const name = String(value || "").trim().slice(0, 40) || "Mi Acuario";
@@ -105,10 +103,12 @@ let unsubscribeCatalogo = null;
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
+    usuarioActual = user;
     $("loginScreen").classList.add("hidden");
     $("app").classList.remove("hidden");
     if (!unsubscribeCatalogo) iniciarSuscripcion();
   } else {
+    usuarioActual = null;
     $("loginScreen").classList.remove("hidden");
     $("app").classList.add("hidden");
     if (unsubscribeCatalogo) { unsubscribeCatalogo(); unsubscribeCatalogo = null; }
@@ -134,14 +134,33 @@ $("loginBtn").addEventListener("click", async () => {
 $("loginEmail").addEventListener("keydown", (e) => { if (e.key === "Enter") $("loginBtn").click(); });
 $("loginPassword").addEventListener("keydown", (e) => { if (e.key === "Enter") $("loginBtn").click(); });
 
+const googleLoginBtn = $("googleLoginBtn");
+if (googleLoginBtn) {
+  googleLoginBtn.addEventListener("click", async () => {
+    $("loginError").textContent = "";
+    googleLoginBtn.disabled = true;
+    googleLoginBtn.textContent = "Conectando…";
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      console.error(err);
+      $("loginError").textContent = "No se pudo iniciar con Google. Intenta de nuevo.";
+    } finally {
+      googleLoginBtn.disabled = false;
+      googleLoginBtn.textContent = "Continuar con Google";
+    }
+  });
+}
+
 $("logoutBtn").addEventListener("click", () => signOut(auth));
 
 // ---------- Firestore realtime ----------
 function iniciarSuscripcion() {
   unsubscribeCatalogo = onSnapshot(
-    query(pecesCol, orderBy("nombreComun")),
+    query(pecesCol, where("ownerUid", "==", auth.currentUser.uid)),
     (snap) => {
-      catalogo = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      catalogo = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => String(a.nombreComun || "").localeCompare(String(b.nombreComun || ""), "es"));
       banner("");
       render();
     },
@@ -392,10 +411,10 @@ function handleFotoChange(e) {
       btn.type = "button"; btn.className = "remove-photo-btn"; btn.id = "removeFotoBtn"; btn.textContent = "Quitar foto";
       box.parentElement.appendChild(btn);
     }
-  }).catch(() => banner("No se pudo procesar la imagen.", "error"));
+  }).catch((err) => banner(err?.message === "imagen_grande" ? "La foto sigue siendo demasiado grande. Elige otra imagen." : "No se pudo procesar la imagen.", "error"));
 }
 
-function resizeImage(file, maxDim = 640, quality = 0.75) {
+function resizeImage(file, maxDim = 560, quality = 0.68) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("lectura"));
@@ -404,12 +423,26 @@ function resizeImage(file, maxDim = 640, quality = 0.75) {
       img.onerror = () => reject(new Error("imagen"));
       img.onload = () => {
         let { width, height } = img;
-        if (width > height && width > maxDim) { height = Math.round((height * maxDim) / width); width = maxDim; }
-        else if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; }
+        const fit = Math.min(1, maxDim / Math.max(width, height));
+        width = Math.max(1, Math.round(width * fit));
+        height = Math.max(1, Math.round(height * fit));
         const canvas = document.createElement("canvas");
         canvas.width = width; canvas.height = height;
         canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
+
+        let dataUrl = canvas.toDataURL("image/jpeg", quality);
+        // Firestore tiene un límite de 1 MiB por documento; dejamos margen para los demás campos.
+        while (dataUrl.length * 0.75 > MAX_FIRESTORE_IMAGE_BYTES && (width > 320 || quality > 0.45)) {
+          if (quality > 0.45) quality -= 0.05;
+          else { width = Math.max(320, Math.round(width * 0.85)); height = Math.max(320, Math.round(height * 0.85)); canvas.width = width; canvas.height = height; }
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          dataUrl = canvas.toDataURL("image/jpeg", quality);
+        }
+        if (dataUrl.length * 0.75 > MAX_FIRESTORE_IMAGE_BYTES) {
+          reject(new Error("imagen_grande"));
+          return;
+        }
+        resolve(dataUrl);
       };
       img.src = reader.result;
     };
@@ -422,6 +455,7 @@ $("saveBtn").addEventListener("click", async () => {
   if (guardando) return;
   const num = safeNumber;
   const datos = {
+    ownerUid: usuarioActual?.uid || "",
     nombreComun: $("nombreComun").value.trim(), nombreCientifico: $("nombreCientifico").value.trim(), familia: $("familia").value.trim(),
     zona: $("zona").value, temperamento: $("temperamento").value, cuidado: $("cuidado").value, reproduccion: $("reproduccion").value,
     tamanoCm: num("tamanoCm"), longevidadAnios: num("longevidadAnios"), phMin: num("phMin"), phMax: num("phMax"),
@@ -435,22 +469,18 @@ $("saveBtn").addEventListener("click", async () => {
   let docId = editando ? editando.id : null;
   const fotoOriginal = editando ? editando.foto || null : null;
   try {
-    if (!docId) { const nuevoRef = await addDoc(pecesCol, { ...datos, foto: null }); docId = nuevoRef.id; }
-    else await updateDoc(doc(db, "peces", docId), datos);
-    if (fotoTemp && fotoTemp !== fotoOriginal) {
-      const fotoRef = ref(storage, `peces/${docId}.jpg`);
-      await uploadString(fotoRef, fotoTemp, "data_url");
-      const url = await getDownloadURL(fotoRef);
-      await updateDoc(doc(db, "peces", docId), { foto: url });
-    } else if (fotoTemp === null && fotoOriginal) {
-      await deleteObject(ref(storage, `peces/${docId}.jpg`));
-      await updateDoc(doc(db, "peces", docId), { foto: null });
+    if (!usuarioActual) throw new Error("No hay usuario autenticado");
+    if (!docId) {
+      const nuevoRef = await addDoc(pecesCol, { ...datos, foto: fotoTemp || null });
+      docId = nuevoRef.id;
+    } else {
+      await updateDoc(doc(db, "peces", docId), { ...datos, foto: fotoTemp || null });
     }
     closeModal();
     banner(editando ? "Especie actualizada correctamente." : "Especie guardada correctamente.", "success");
   } catch (err) {
     console.error(err);
-    banner(!editando && docId ? "Los datos se guardaron, pero hubo un problema con la foto. Puedes editar la especie y volver a intentarlo." : "No se pudo completar el guardado. Revisa la conexión y las reglas de Firebase.", !editando && docId ? "warning" : "error");
+    banner("No se pudo guardar. Revisa la conexión, las reglas de Firestore o el tamaño de la foto.", "error");
   } finally {
     guardando = false; $("saveBtn").disabled = false; $("saveBtn").textContent = "Guardar"; validarForm();
   }
@@ -462,9 +492,6 @@ async function eliminarPez(id) {
   if (!window.confirm(`¿Eliminar "${pez.nombreComun || "esta especie"}"?\n\nEsta acción no se puede deshacer.`)) return;
   try {
     await deleteDoc(doc(db, "peces", id));
-    if (pez && pez.foto) {
-      await deleteObject(ref(storage, `peces/${id}.jpg`)).catch(() => {});
-    }
     if (expandido === id) expandido = null;
   } catch (err) {
     console.error(err);
