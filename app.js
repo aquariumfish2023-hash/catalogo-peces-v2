@@ -21,6 +21,14 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
+getRedirectResult(auth).catch((err) => {
+  if (err) {
+    console.error("Resultado de redirección de Google:", err);
+    const errorEl = $("loginError");
+    if (errorEl) errorEl.textContent = firebaseAuthMessage(err);
+  }
+});
+
 const pecesCol = collection(db, "peces");
 
 // Autenticación: funciones globales para que los botones de ingreso
