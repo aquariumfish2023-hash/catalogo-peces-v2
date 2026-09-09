@@ -23,6 +23,73 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 const pecesCol = collection(db, "peces");
 
+// Autenticación: funciones globales para que los botones de ingreso
+// sigan funcionando aunque el navegador tenga problemas con listeners dinámicos.
+window.ingresarConCorreo = async function(){
+  const email=$("loginEmail")?.value.trim() || "";
+  const password=$("loginPassword")?.value || "";
+  const errorBox=$("loginError");
+  const btn=$("loginBtn");
+  if(!email || !password){
+    if(errorBox) errorBox.textContent="Escribe tu correo y contraseña.";
+    return;
+  }
+  if(errorBox) errorBox.textContent="";
+  if(btn){btn.disabled=true;btn.textContent="Ingresando…";}
+  try{
+    await signInWithEmailAndPassword(auth,email,password);
+  }catch(err){
+    console.error("LOGIN EMAIL",err);
+    if(errorBox){
+      const map={
+        "auth/invalid-credential":"Correo o contraseña incorrectos.",
+        "auth/invalid-email":"El correo no es válido.",
+        "auth/user-not-found":"No existe una cuenta con ese correo.",
+        "auth/wrong-password":"La contraseña no es correcta.",
+        "auth/too-many-requests":"Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
+        "auth/operation-not-allowed":"El acceso por correo y contraseña no está habilitado en Firebase."
+      };
+      errorBox.textContent=map[err.code] || `No se pudo ingresar (${err.code||"error"}).`;
+    }
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent="Ingresar";}
+  }
+};
+
+window.ingresarConGoogle = async function(){
+  const errorBox=$("loginError");
+  const btn=$("googleLoginBtn");
+  if(errorBox) errorBox.textContent="";
+  if(btn){btn.disabled=true;btn.textContent="Conectando con Google…";}
+  try{
+    await signInWithPopup(auth,googleProvider);
+  }catch(err){
+    console.error("LOGIN GOOGLE",err);
+    // Si el navegador bloquea la ventana emergente, usamos redirección.
+    if(err?.code==="auth/popup-blocked" || err?.code==="auth/popup-cancelled-by-user"){
+      try{
+        const { signInWithRedirect } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js");
+        await signInWithRedirect(auth,googleProvider);
+        return;
+      }catch(redirectErr){
+        console.error("LOGIN GOOGLE REDIRECT",redirectErr);
+        err=redirectErr;
+      }
+    }
+    if(errorBox){
+      const map={
+        "auth/unauthorized-domain":"Este dominio todavía no está autorizado en Firebase Authentication.",
+        "auth/popup-closed-by-user":"La ventana de Google se cerró. Vuelve a intentarlo.",
+        "auth/cancelled-popup-request":"La ventana de Google fue cancelada. Vuelve a intentarlo.",
+        "auth/network-request-failed":"No hay conexión con Firebase. Revisa internet e inténtalo de nuevo."
+      };
+      errorBox.textContent=map[err.code] || `No se pudo iniciar con Google (${err.code||"error"}).`;
+    }
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent="Continuar con Google";}
+  }
+};
+
 const ZONAS = {
   superficie: {label:"Superficie", color:"#C97B3D"},
   media: {label:"Media agua", color:"#4A90A4"},
@@ -94,21 +161,10 @@ onAuthStateChanged(auth,user=>{
   }
 });
 
-$("loginBtn").addEventListener("click",async()=>{
-  const email=$("loginEmail").value.trim(), password=$("loginPassword").value;
-  $("loginError").textContent=""; $("loginBtn").disabled=true; $("loginBtn").textContent="Ingresando…";
-  try{await signInWithEmailAndPassword(auth,email,password)}
-  catch(err){console.error(err);$("loginError").textContent="Correo o contraseña incorrectos."}
-  finally{$("loginBtn").disabled=false;$("loginBtn").textContent="Ingresar"}
-});
-$("loginEmail").addEventListener("keydown",e=>{if(e.key==="Enter")$("loginBtn").click()});
-$("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")$("loginBtn").click()});
-$("googleLoginBtn").addEventListener("click",async()=>{
-  $("loginError").textContent=""; $("googleLoginBtn").disabled=true; $("googleLoginBtn").textContent="Conectando…";
-  try{await signInWithPopup(auth,googleProvider)}
-  catch(err){console.error(err);$("loginError").textContent="No se pudo iniciar con Google. Intenta de nuevo."}
-  finally{$("googleLoginBtn").disabled=false;$("googleLoginBtn").textContent="Continuar con Google"}
-});
+$("loginBtn").addEventListener("click",()=>window.ingresarConCorreo());
+$("loginEmail").addEventListener("keydown",e=>{if(e.key==="Enter")window.ingresarConCorreo()});
+$("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")window.ingresarConCorreo()});
+$("googleLoginBtn").addEventListener("click",()=>window.ingresarConGoogle());
 $("logoutBtn").addEventListener("click",()=>signOut(auth));
 
 function iniciarSuscripcion(){
