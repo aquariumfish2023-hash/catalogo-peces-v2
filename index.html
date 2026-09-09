@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Catálogo de Peces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#0E2A2B" />
+<meta name="description" content="Catálogo de peces de agua dulce" />
+<link rel="manifest" href="manifest.json" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="loginScreen" class="login-screen">
+    <div class="login-box">
+      <div class="login-title">🐟 Catálogo de Peces</div>
+      <div class="login-sub">Inicia sesión con la misma cuenta de tu app de inventario</div>
+      <div class="field">
+        <div class="field-label">Correo</div>
+        <input id="loginEmail" type="email" placeholder="tu@correo.com" autocomplete="username" />
+      </div>
+      <div class="field">
+        <div class="field-label">Contraseña</div>
+        <input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <div id="loginError" class="login-error"></div>
+      <button id="loginBtn" class="save-btn" style="width:100%">Ingresar</button>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <header class="header">
+      <div class="header-left">
+        <span class="fish-icon">🐟</span>
+        <div>
+          <input id="storeName" class="store-name" value="Mi Acuario" maxlength="40" aria-label="Nombre del acuario" title="Nombre del acuario" />
+          <div class="store-sub">Catálogo de peces de agua dulce</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="toggleView" class="toggle-btn">Vista interna</button>
+        <button id="logoutBtn" class="toggle-btn logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <div class="search-bar">
+      <input id="searchInput" type="search" autocomplete="off" placeholder="Buscar por nombre, científico o familia…" aria-label="Buscar especies" />
+    </div>
+
+    <div class="filter-row" id="filterZona"></div>
+    <div class="filter-row" id="filterCuidado"></div>
+
+    <div id="statusBanner"></div>
+    <div class="count-row" id="countRow"></div>
+    <div class="list" id="list"></div>
+
+    <button id="fab" class="fab" type="button" title="Agregar especie" aria-label="Agregar especie">+</button>
+  </div>
+
+  <div id="modalOverlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title" id="modalTitle">Agregar especie</div>
+        <button id="closeModal" class="close-btn" type="button" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot">
+        <button id="cancelBtn" class="cancel-btn">Cancelar</button>
+        <button id="saveBtn" class="save-btn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

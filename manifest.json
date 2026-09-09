@@ -1,0 +1,10 @@
+{
+  "name": "Catálogo de Peces",
+  "short_name": "Catálogo Peces",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#F2F6F5",
+  "theme_color": "#0E2A2B",
+  "lang": "es",
+  "description": "Catálogo de peces de agua dulce"
+}
