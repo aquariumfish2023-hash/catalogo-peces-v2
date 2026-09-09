@@ -200,6 +200,114 @@ function stat(label,value){return `<div class="stat"><div class="stat-label">${l
 function line(label,value){return `<div class="detail-line"><b>${label}:</b><span>${escapeHtml(value||"-")}</span></div>`}
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
+
+function labelValor(value, fallback="—"){
+  const v=String(value??"").trim();
+  return escapeHtml(v||fallback);
+}
+function rangeValue(a,b,suffix=""){
+  const av=a!==null&&a!==undefined&&a!==""?a:null;
+  const bv=b!==null&&b!==undefined&&b!==""?b:null;
+  if(av===null&&bv===null)return "—";
+  if(av!==null&&bv!==null)return `${av}–${bv}${suffix}`;
+  return `${av??bv}${suffix}`;
+}
+function availabilityHtml(p){
+  const stock=Number(p.stock)||0;
+  return `<span class="availability ${stock>0?"available":"soldout"}">${stock>0?"✓ Disponible":"Agotado"}</span>`;
+}
+function infoCard(icon,title,value,accent=""){
+  return `<div class="info-card ${accent}"><div class="info-icon">${icon}</div><div><div class="info-title">${title}</div><div class="info-value">${value}</div></div></div>`;
+}
+function detailModalHtml(p){
+  const zona=ZONAS[p.zona]||ZONAS.media;
+  const cuidado=CUIDADOS[p.cuidado]||CUIDADOS.facil;
+  const photo=p.foto?`<img class="detail-hero-photo" src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun||"Pez")}">`:`<div class="detail-hero-placeholder">🐟</div>`;
+  const thumbs=p.foto?`<div class="detail-thumb active">${photo.replace('class="detail-hero-photo"','class="detail-thumb-img"')}</div>`:"";
+  const internal=vistaInterna;
+  const price=internal&&p.precio!=null?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"";
+  const stock=internal?availabilityHtml(p):"";
+  const actions=internal?`<button class="detail-action edit" data-detail-edit="${p.id}">✎ Editar</button><button class="detail-action danger" data-detail-delete="${p.id}">🗑 Eliminar</button>`:"";
+  const vars=String(p.variedades||"").split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);
+  return `<div class="detail-hero">
+      <div class="detail-gallery"><div class="detail-main-photo">${photo}</div>${vars.length?`<div class="detail-variety-row">${vars.map(v=>`<span>${escapeHtml(v)}</span>`).join("")}</div>`:""}${thumbs?`<div class="detail-thumbs">${thumbs}</div>`:""}</div>
+      <div class="detail-intro">
+        <div class="detail-eyebrow">FICHA DE ESPECIE</div>
+        <div class="detail-title-row"><div><h2 id="detailTitle">${escapeHtml(p.nombreComun||"Sin nombre")}</h2><div class="detail-scientific">${escapeHtml(p.nombreCientifico||"")}</div></div><span class="care-pill" style="border-color:${cuidado.color};color:${cuidado.color}">★ ${cuidado.label}</span></div>
+        ${p.familia?`<div class="family-pill">♧ Familia: ${escapeHtml(p.familia)}</div>`:""}
+        ${p.notas?`<p class="detail-description">${escapeHtml(p.notas)}</p>`:`<p class="detail-description">Ficha profesional de ${escapeHtml(p.nombreComun||"esta especie")}, con información de cuidado y manejo para consulta rápida.</p>`}
+        <div class="core-grid">
+          ${infoCard("💧","Zona de nado",`<span style="color:${zona.color}">${escapeHtml(zona.label)}</span>`) }
+          ${infoCard("🌡️","Temperatura",rangeValue(p.tempMinC,p.tempMaxC," °C"),"warm")}
+          ${infoCard("pH","pH",rangeValue(p.phMin,p.phMax),"ph")}
+          ${infoCard("🐟","Tamaño adulto",p.tamanoCm!=null?`${escapeHtml(p.tamanoCm)} cm`:"—")}
+          ${infoCard("▣","Acuario mínimo",p.acuarioMinL!=null?`${escapeHtml(p.acuarioMinL)} litros`:"—")}
+          ${infoCard("◉","Grupo mínimo",p.cardumenMin===1?"Solitario":p.cardumenMin!=null?`${escapeHtml(p.cardumenMin)} ejemplares`:"—")}
+        </div>
+        ${internal?`<div class="detail-commercial"><div><div class="commercial-label">Precio</div>${price||"<div class=\"price-big\">Consultar</div>"}</div><div><div class="commercial-label">Disponibilidad</div>${stock}</div></div>`:""}
+      </div>
+    </div>
+    <div class="detail-section-grid">
+      ${infoCard("🍽️","Alimentación",labelValor(p.alimentacion),"wide")}
+      ${infoCard("👥","Compatibilidad",labelValor(p.compatibilidad),"wide")}
+      ${infoCard("🛡️","Temperamento",TEMPERAMENTOS[p.temperamento]||"—")}
+      ${infoCard("🌎","Origen",labelValor(p.origen))}
+      ${infoCard("♻️","Reproducción",p.reproduccion==="oviparo"?"Ovíparo":p.reproduccion==="viviparo"?"Vivíparo":"—")}
+      ${infoCard("⏳","Longevidad",p.longevidadAnios!=null?`${escapeHtml(p.longevidadAnios)} años`:"—")}
+    </div>
+    <div class="detail-bottom">
+      <div class="detail-note"><strong>Variedades comunes</strong><div>${vars.length?vars.map(v=>`<span>${escapeHtml(v)}</span>`).join(""):"No registradas"}</div></div>
+      ${internal?`<div class="detail-note stock-note"><strong>Stock</strong><div class="stock-number">${Number(p.stock)||0}<small> ejemplares</small></div></div>`:""}
+    </div>
+    <div class="detail-actions-bar">
+      <button class="detail-action print" data-detail-print="${p.id}">🖨 Imprimir ficha</button>
+      <button class="detail-action share" data-detail-share="${p.id}">↗ Compartir</button>
+      ${internal?`<div class="detail-spacer"></div>${actions}`:""}
+    </div>`;
+}
+function openDetailModal(id){
+  const p=catalogo.find(x=>x.id===id); if(!p)return;
+  expandido=id;
+  $("detailBody").innerHTML=detailModalHtml(p);
+  $("detailOverlay").classList.remove("hidden");
+  document.body.classList.add("modal-open");
+}
+function closeDetailModal(){
+  $("detailOverlay").classList.add("hidden");
+  document.body.classList.remove("modal-open");
+}
+function sharePez(p){
+  const text=`${p.nombreComun||"Pez"} — ${p.nombreCientifico||""}${p.familia?`\nFamilia: ${p.familia}`:""}`;
+  if(navigator.share){navigator.share({title:p.nombreComun||"Ficha de pez",text}).catch(()=>{});return;}
+  navigator.clipboard?.writeText(text).then(()=>banner("Datos de la especie copiados para compartir.","success")).catch(()=>banner("No se pudo copiar la ficha.","error"));
+}
+function printPez(p){
+  const w=window.open("","_blank","width=900,height=900");
+  if(!w){banner("El navegador bloqueó la ventana de impresión. Permite ventanas emergentes.","warning");return;}
+  const img=p.foto?`<img src="${escapeHtml(p.foto)}" alt="">`:"";
+  const rows=[
+    ["Familia",p.familia],["Zona de nado",ZONAS[p.zona]?.label],["Nivel de cuidado",CUIDADOS[p.cuidado]?.label],
+    ["Temperatura",rangeValue(p.tempMinC,p.tempMaxC," °C")],["pH",rangeValue(p.phMin,p.phMax)],
+    ["Tamaño adulto",p.tamanoCm!=null?`${p.tamanoCm} cm`:"—"],["Acuario mínimo",p.acuarioMinL!=null?`${p.acuarioMinL} L`:"—"],
+    ["Alimentación",p.alimentacion],["Compatibilidad",p.compatibilidad],["Temperamento",TEMPERAMENTOS[p.temperamento]],
+    ["Origen",p.origen],["Reproducción",p.reproduccion==="oviparo"?"Ovíparo":p.reproduccion==="viviparo"?"Vivíparo":"—"],
+    ["Longevidad",p.longevidadAnios!=null?`${p.longevidadAnios} años`:"—"]
+  ];
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${escapeHtml(p.nombreComun||"Ficha")}</title><style>body{font-family:Arial,sans-serif;color:#102d30;margin:35px}h1{margin-bottom:3px}em{color:#58716e}.hero{display:grid;grid-template-columns:320px 1fr;gap:28px;align-items:start}.hero img{width:320px;height:260px;object-fit:cover;border-radius:16px}table{width:100%;border-collapse:collapse;margin-top:22px}td{padding:9px;border-bottom:1px solid #ddd}td:first-child{font-weight:bold;width:35%}.tag{display:inline-block;border:1px solid #2b7b78;border-radius:20px;padding:5px 10px;margin-top:10px}.price{font-size:22px;font-weight:bold;margin-top:16px}@media print{body{margin:18mm}}</style></head><body><div class="hero">${img?`<div>${img}</div>`:"<div style="font-size:90px">🐟</div>"}<div><div style="letter-spacing:2px;font-size:11px;color:#c97b3d">FICHA DE ESPECIE</div><h1>${escapeHtml(p.nombreComun||"Sin nombre")}</h1><em>${escapeHtml(p.nombreCientifico||"")}</em>${p.familia?`<div class="tag">Familia: ${escapeHtml(p.familia)}</div>`:""}${vistaInterna&&p.precio!=null?`<div class="price">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:""}</div></div><table>${rows.map(r=>`<tr><td>${escapeHtml(r[0])}</td><td>${escapeHtml(r[1]||"—")}</td></tr>`).join("")}</table>${p.variedades?`<p><b>Variedades:</b> ${escapeHtml(p.variedades)}</p>`:""}${p.notas?`<p><b>Notas:</b> ${escapeHtml(p.notas)}</p>`:""}</body></html>`);
+  w.document.close(); w.focus(); setTimeout(()=>w.print(),350);
+}
+$("detailCloseBtn").addEventListener("click",closeDetailModal);
+$("detailBackBtn").addEventListener("click",closeDetailModal);
+$("detailOverlay").addEventListener("click",e=>{if(e.target.id==="detailOverlay")closeDetailModal()});
+$("detailShareBtn").addEventListener("click",()=>{const id=document.querySelector("[data-detail-share]")?.dataset.detailShare;const p=catalogo.find(x=>x.id===id);if(p)sharePez(p)});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("detailOverlay").classList.contains("hidden"))closeDetailModal()});
+document.body.addEventListener("click",e=>{
+  const share=e.target.closest("[data-detail-share]"); if(share){const p=catalogo.find(x=>x.id===share.dataset.detailShare);if(p)sharePez(p);return;}
+  const print=e.target.closest("[data-detail-print]"); if(print){const p=catalogo.find(x=>x.id===print.dataset.detailPrint);if(p)printPez(p);return;}
+  const edit=e.target.closest("[data-detail-edit]"); if(edit){const p=catalogo.find(x=>x.id===edit.dataset.detailEdit);closeDetailModal();openModal(p);return;}
+  const del=e.target.closest("[data-detail-delete]"); if(del){closeDetailModal();eliminarPez(del.dataset.detailDelete);return;}
+});
+
 $("searchInput").addEventListener("input",e=>{busqueda=e.target.value.trim();render()});
 $("clearSearch").addEventListener("click",()=>{$("searchInput").value="";busqueda="";render()});
 $("clearFilters").addEventListener("click",()=>{
@@ -218,7 +326,7 @@ document.body.addEventListener("click",e=>{
   const delBtn=e.target.closest("[data-del]");
   if(delBtn){e.stopPropagation();eliminarPez(delBtn.dataset.del);return}
   const head=e.target.closest(".entry-head");
-  if(head){expandido=expandido===head.dataset.id?null:head.dataset.id;render();return}
+  if(head){openDetailModal(head.dataset.id);return}
   if(e.target.id==="removeFotoBtn"){
     fotoTemp=null;
     const box=$("photoUploadBox");
@@ -238,7 +346,7 @@ $("heroAddBtn").addEventListener("click",()=>openModal(null));
 const CAMPOS_VACIOS={
   nombreComun:"",nombreCientifico:"",familia:"",zona:"media",temperamento:"pacifico",cuidado:"facil",
   tamanoCm:"",phMin:"",phMax:"",tempMinC:"",tempMaxC:"",acuarioMinL:"",cardumenMin:"",
-  alimentacion:"",compatibilidad:"",reproduccion:"oviparo",longevidadAnios:"",origen:"",precio:"",stock:"",notas:"",foto:null
+  alimentacion:"",compatibilidad:"",reproduccion:"oviparo",longevidadAnios:"",origen:"",variedades:"",precio:"",stock:"",notas:"",foto:null
 };
 function openModal(pez){
   editando=pez||null;fotoTemp=pez?pez.foto||null:null;
@@ -283,6 +391,7 @@ function formHtml(f){
   <div class="field"><div class="field-label">Alimentación</div><textarea id="alimentacion" rows="2">${escapeHtml(f.alimentacion)}</textarea></div>
   <div class="field"><div class="field-label">Compatibilidad</div><textarea id="compatibilidad" rows="2">${escapeHtml(f.compatibilidad)}</textarea></div>
   <div class="field"><div class="field-label">Origen</div><input id="origen" value="${escapeHtml(f.origen)}"></div>
+  <div class="field"><div class="field-label">Variedades comunes</div><input id="variedades" value="${escapeHtml(f.variedades||"")}" placeholder="Ej. Media luna, Corona, Velo"></div>
   <div class="row-2"><div class="field"><div class="field-label">Precio ($)</div><input type="number" min="0" step="100" id="precio" value="${f.precio}"></div>
   <div class="field"><div class="field-label">Stock (unidades)</div><input type="number" min="0" step="1" id="stock" value="${f.stock}"></div></div>
   <div class="field"><div class="field-label">Notas internas</div><textarea id="notas" rows="2">${escapeHtml(f.notas)}</textarea></div>`;
