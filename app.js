@@ -357,7 +357,55 @@ function printPez(p){
     ["Origen",p.origen],["Reproducción",p.reproduccion==="oviparo"?"Ovíparo":p.reproduccion==="viviparo"?"Vivíparo":"—"],
     ["Longevidad",p.longevidadAnios!=null?`${p.longevidadAnios} años`:"—"]
   ];
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${escapeHtml(p.nombreComun||"Ficha")}</title><style>body{font-family:Arial,sans-serif;color:#102d30;margin:35px}h1{margin-bottom:3px}em{color:#58716e}.hero{display:grid;grid-template-columns:320px 1fr;gap:28px;align-items:start}.hero img{width:320px;height:260px;object-fit:cover;border-radius:16px}table{width:100%;border-collapse:collapse;margin-top:22px}td{padding:9px;border-bottom:1px solid #ddd}td:first-child{font-weight:bold;width:35%}.tag{display:inline-block;border:1px solid #2b7b78;border-radius:20px;padding:5px 10px;margin-top:10px}.price{font-size:22px;font-weight:bold;margin-top:16px}@media print{body{margin:18mm}}</style></head><body><div class="hero">${img?`<div>${img}</div>`:"<div style="font-size:90px">🐟</div>"}<div><div style="letter-spacing:2px;font-size:11px;color:#c97b3d">FICHA DE ESPECIE</div><h1>${escapeHtml(p.nombreComun||"Sin nombre")}</h1><em>${escapeHtml(p.nombreCientifico||"")}</em>${p.familia?`<div class="tag">Familia: ${escapeHtml(p.familia)}</div>`:""}${vistaInterna&&p.precio!=null?`<div class="price">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:""}</div></div><table>${rows.map(r=>`<tr><td>${escapeHtml(r[0])}</td><td>${escapeHtml(r[1]||"—")}</td></tr>`).join("")}</table>${p.variedades?`<p><b>Variedades:</b> ${escapeHtml(p.variedades)}</p>`:""}${p.notas?`<p><b>Notas:</b> ${escapeHtml(p.notas)}</p>`:""}</body></html>`);
+  const title = escapeHtml(p.nombreComun || "Ficha");
+  const scientific = escapeHtml(p.nombreCientifico || "");
+  const familyTag = p.familia
+    ? '<div class="tag">Familia: ' + escapeHtml(p.familia) + '</div>'
+    : "";
+  const priceBlock = (vistaInterna && p.precio != null)
+    ? '<div class="price">$' + Number(p.precio || 0).toLocaleString("es-CO") + '</div>'
+    : "";
+  const imageBlock = img
+    ? '<div>' + img + '</div>'
+    : '<div style="font-size:90px">🐟</div>';
+
+  const tableRows = rows.map(r =>
+    '<tr><td>' + escapeHtml(r[0]) + '</td><td>' + escapeHtml(r[1] || "—") + '</td></tr>'
+  ).join("");
+
+  const varietiesBlock = p.variedades
+    ? '<p><b>Variedades:</b> ' + escapeHtml(p.variedades) + '</p>'
+    : "";
+  const notesBlock = p.notas
+    ? '<p><b>Notas:</b> ' + escapeHtml(p.notas) + '</p>'
+    : "";
+
+  const printHtml =
+    '<!doctype html><html lang="es"><head><meta charset="utf-8">' +
+    '<title>' + title + '</title>' +
+    '<style>' +
+    'body{font-family:Arial,sans-serif;color:#102d30;margin:35px}' +
+    'h1{margin-bottom:3px}em{color:#58716e}' +
+    '.hero{display:grid;grid-template-columns:320px 1fr;gap:28px;align-items:start}' +
+    '.hero img{width:320px;height:260px;object-fit:cover;border-radius:16px}' +
+    'table{width:100%;border-collapse:collapse;margin-top:22px}' +
+    'td{padding:9px;border-bottom:1px solid #ddd}' +
+    'td:first-child{font-weight:bold;width:35%}' +
+    '.tag{display:inline-block;border:1px solid #2b7b78;border-radius:20px;padding:5px 10px;margin-top:10px}' +
+    '.price{font-size:22px;font-weight:bold;margin-top:16px}' +
+    '@media print{body{margin:18mm}}' +
+    '</style></head><body>' +
+    '<div class="hero">' + imageBlock +
+    '<div><div style="letter-spacing:2px;font-size:11px;color:#c97b3d">FICHA DE ESPECIE</div>' +
+    '<h1>' + (title || "Sin nombre") + '</h1>' +
+    '<em>' + scientific + '</em>' +
+    familyTag + priceBlock +
+    '</div></div>' +
+    '<table>' + tableRows + '</table>' +
+    varietiesBlock + notesBlock +
+    '</body></html>';
+
+  w.document.write(printHtml);
   w.document.close(); w.focus(); setTimeout(()=>w.print(),350);
 }
 $("detailCloseBtn").addEventListener("click",closeDetailModal);
