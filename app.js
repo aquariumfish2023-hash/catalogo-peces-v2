@@ -352,19 +352,92 @@ function textoCompartirPez(p){
   ].filter(Boolean);
   return partes.join("\\n");
 }
-function sharePez(p){
-  const text=textoCompartirPez(p);
-  if(navigator.share){
-    navigator.share({title:`${p.nombreComun||"Ficha de pez"} — ${($("storeName")?.value||"Mi Acuario").trim()}`,text}).catch(()=>{});
-    return;
+function cargarImagenCanvas(src){
+  return new Promise((resolve,reject)=>{
+    if(!src){resolve(null);return;}
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(new Error("imagen"));
+    img.src=src;
+  });
+}
+function textoCortoCompartir(p){
+  return `🐟 ${p.nombreComun||"Pez"} — Ficha de especie de Catálogo Peces V2`;
+}
+function envolverTextoCanvas(ctx,text,maxWidth){
+  const palabras=String(text||"").split(/\s+/).filter(Boolean), lineas=[]; let linea="";
+  for(const palabra of palabras){
+    const prueba=linea?`${linea} ${palabra}`:palabra;
+    if(ctx.measureText(prueba).width<=maxWidth){linea=prueba;}
+    else{if(linea)lineas.push(linea);linea=palabra;}
   }
-  navigator.clipboard?.writeText(text).then(()=>banner("Ficha copiada para compartir.","success")).catch(()=>banner("No se pudo copiar la ficha.","error"));
+  if(linea)lineas.push(linea);
+  return lineas;
 }
-function shareWhatsAppPez(p){
-  const text=encodeURIComponent(textoCompartirPez(p));
-  const url=`https://wa.me/?text=${text}`;
-  window.open(url,"_blank","noopener,noreferrer");
+function redondearRect(ctx,x,y,w,h,r,fill){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
+  if(fill)ctx.fillStyle=fill,ctx.fill();
 }
+async function generarFichaImagen(p){
+  const W=1080,H=1520,pad=54,inner=W-pad*2;
+  const canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;const ctx=canvas.getContext("2d");
+  const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,"#f7fcff");bg.addColorStop(1,"#e8f5fb");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  const navy="#124b78",blue="#1f8fca",light="#e8f5fc",purple="#8b5aa9",green="#3f9b72",gold="#e1a21a",text="#173b59",muted="#56718a";
+  redondearRect(ctx,pad,38,inner,190,28,navy);
+  let img=null;try{img=await cargarImagenCanvas(p.foto)}catch{}
+  if(img){const x=pad+24,y=62,w=250,h=142,scale=Math.max(w/img.width,h/img.height),sw=img.width*scale,sh=img.height*scale,ox=x+(w-sw)/2,oy=y+(h-sh)/2;ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.drawImage(img,ox,oy,sw,sh);ctx.restore();}
+  else{ctx.font="76px Arial";ctx.fillStyle="#fff";ctx.fillText("🐟",pad+95,150)}
+  ctx.fillStyle="#fff";ctx.font="bold 52px Arial";ctx.fillText(p.nombreComun||"Pez",pad+300,105);
+  ctx.font="italic 25px Arial";ctx.fillStyle="#dceeff";ctx.fillText(p.nombreCientifico||"",pad+300,145);
+  if(p.familia){ctx.font="bold 22px Arial";ctx.fillStyle="#fff";ctx.fillText(`Familia: ${p.familia}`,pad+300,185)}
+  ctx.font="bold 19px Arial";ctx.fillStyle="#dceeff";ctx.fillText("FICHA DE ESPECIE",pad+300,62);
+
+  let y=260;
+  const addCard=(icon,title,value,color=blue,wide=false)=>{
+    const x=pad,w=wide?inner:inner/2-12; const h=wide?122:104;
+    redondearRect(ctx,x,y,w,h,22,"#ffffff");
+    ctx.fillStyle=color;ctx.beginPath();ctx.arc(x+42,y+42,25,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#fff";ctx.font="bold 22px Arial";ctx.textAlign="center";ctx.fillText(icon,x+42,y+50);ctx.textAlign="left";
+    ctx.fillStyle=text;ctx.font="bold 20px Arial";ctx.fillText(title,x+82,y+35);
+    ctx.fillStyle=muted;ctx.font="20px Arial";const lines=envolverTextoCanvas(ctx,value||"—",w-105);lines.slice(0,2).forEach((line,i)=>ctx.fillText(line,x+82,y+66+i*27));
+    y+=h+14;return w;
+  };
+  const vals=[];
+  if(p.tamanoCm!=null)vals.push(["🐟","Tamaño adulto",`${p.tamanoCm} cm`,blue]);
+  if(p.tempMinC!=null||p.tempMaxC!=null)vals.push(["🌡","Temperatura",`${p.tempMinC??"—"} – ${p.tempMaxC??"—"} °C`,gold]);
+  if(p.phMin!=null||p.phMax!=null)vals.push(["pH","pH",`${p.phMin??"—"} – ${p.phMax??"—"}`,purple]);
+  if(p.acuarioMinL!=null)vals.push(["▣","Acuario mínimo",`${p.acuarioMinL} litros`,blue]);
+  if(p.temperamento)vals.push(["★","Temperamento",TEMPERAMENTOS[p.temperamento]||p.temperamento,green]);
+  if(p.origen)vals.push(["🌎","Origen",p.origen,blue]);
+  for(let i=0;i<vals.length;i+=2){
+    const pair=vals.slice(i,i+2); const rowY=y; const oldY=y;
+    pair.forEach((v,j)=>{const x=pad+j*(inner/2+12),w=inner/2-6,h=104;redondearRect(ctx,x,rowY,w,h,22,"#ffffff");ctx.fillStyle=v[3];ctx.beginPath();ctx.arc(x+38,rowY+38,24,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="bold 20px Arial";ctx.textAlign="center";ctx.fillText(v[0],x+38,rowY+45);ctx.textAlign="left";ctx.fillStyle=text;ctx.font="bold 18px Arial";ctx.fillText(v[1],x+72,rowY+32);ctx.fillStyle=muted;ctx.font="18px Arial";envolverTextoCanvas(ctx,v[2],w-90).slice(0,2).forEach((line,k)=>ctx.fillText(line,x+72,rowY+62+k*25));});
+    y=oldY+118;
+  }
+  const section=(title,value,color)=>{
+    if(!value)return;
+    const lines=envolverTextoCanvas(ctx,value,inner-50);const h=72+Math.min(lines.length,4)*27;
+    redondearRect(ctx,pad,y,inner,h,24,"#fff");ctx.fillStyle=color;ctx.font="bold 25px Arial";ctx.fillText(title,pad+25,y+39);ctx.fillStyle=muted;ctx.font="19px Arial";lines.slice(0,4).forEach((line,i)=>ctx.fillText(line,pad+25,y+70+i*27));y+=h+14;
+  };
+  section("🍽 Alimentación",p.alimentacion,green);
+  section("👥 Compatibilidad",p.compatibilidad,purple);
+  if(p.variedades)section("✦ Variedades",p.variedades,blue);
+  ctx.fillStyle="#fff";ctx.fillRect(0,H-84,W,84);ctx.fillStyle=navy;ctx.fillRect(0,H-8,W,8);
+  ctx.fillStyle=navy;ctx.font="bold 27px Arial";ctx.textAlign="center";ctx.fillText("🐟  Catálogo Peces V2",W/2,H-46);ctx.font="16px Arial";ctx.fillStyle=muted;ctx.fillText("Información para conocer y disfrutar cada especie",W/2,H-20);ctx.textAlign="left";
+  return new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("blob")),"image/jpeg",.9));
+}
+async function compartirFichaImagen(p,modo="compartir"){
+  try{
+    const blob=await generarFichaImagen(p);const nombre=`ficha-${normalizarTexto(p.nombreComun||"pez").replace(/\s+/g,"-")||"pez"}.jpg`;const file=new File([blob],nombre,{type:"image/jpeg"});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({title:p.nombreComun||"Ficha de pez",text:textoCortoCompartir(p),files:[file]});return;
+    }
+    const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=nombre;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+    banner(modo==="whatsapp"?"La ficha se generó como imagen. Adjunta la imagen en WhatsApp.":"La ficha se generó como imagen y se descargó para compartir.","success");
+  }catch(err){console.error(err);banner("No se pudo generar la ficha como imagen.","error");}
+}
+function sharePez(p){compartirFichaImagen(p,"compartir");}
+function shareWhatsAppPez(p){compartirFichaImagen(p,"whatsapp");}
 function printPez(p){
   const w=window.open("","_blank","width=900,height=900");
   if(!w){banner("El navegador bloqueó la ventana de impresión. Permite ventanas emergentes.","warning");return;}
