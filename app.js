@@ -143,7 +143,7 @@ function validarDatos(d){
   const e=[];
   if(!d.nombreComun)e.push("falta el nombre común");
   if(!d.nombreCientifico)e.push("falta el nombre científico");
-  for(const [label,v] of [["Tamaño adulto",d.tamanoCm],["Longevidad",d.longevidadAnios],["Acuario mínimo",d.acuarioMinL],["Precio",d.precio],["Stock",d.stock]]){
+  for(const [label,v] of [["Tamaño adulto",d.tamanoCm],["Longevidad",d.longevidadAnios],["Acuario mínimo",d.acuarioMinL],["Precio",d.precio]]){
     if(v!==null&&(!Number.isFinite(v)||v<0))e.push(`${label} inválido`);
   }
   if(d.cardumenMin!==null&&(!Number.isFinite(d.cardumenMin)||d.cardumenMin<1))e.push("el grupo mínimo debe ser al menos 1");
@@ -194,10 +194,13 @@ function renderFiltros(){
 function chipHtml(key,label,color,active,group){
   return `<button class="chip ${active?"active":""}" data-group="${group}" data-key="${key}" style="border-color:${color};background:${active?color:"transparent"};color:${active?"#fff":color}">${label}</button>`;
 }
+function normalizarTexto(value){
+  return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+}
 function filtradosActuales(){
   return catalogo.filter(p=>{
-    const texto=`${p.nombreComun||""} ${p.nombreCientifico||""} ${p.familia||""}`.toLowerCase();
-    if(busqueda&&!texto.includes(busqueda.toLowerCase()))return false;
+    const texto=normalizarTexto(`${p.nombreComun||""} ${p.nombreCientifico||""} ${p.familia||""} ${p.variedades||""} ${p.origen||""}`);
+    if(busqueda&&!texto.includes(normalizarTexto(busqueda)))return false;
     if(filtroZona&&p.zona!==filtroZona)return false;
     if(filtroCuidado&&p.cuidado!==filtroCuidado)return false;
     return true;
@@ -209,7 +212,6 @@ function render(){
   $("totalCount").textContent=catalogo.length;
   $("familyCount").textContent=new Set(catalogo.map(p=>String(p.familia||"").trim().toLowerCase()).filter(Boolean)).size;
   $("waterCount").textContent=new Set(catalogo.map(p=>p.zona).filter(Boolean)).size;
-  $("stockCount").textContent=catalogo.reduce((sum,p)=>sum+(Number(p.stock)||0),0);
   $("clearSearch").classList.toggle("hidden",!busqueda);
   $("clearFilters").classList.toggle("hidden",!(busqueda||filtroZona||filtroCuidado));
   document.querySelectorAll(".internal-only").forEach(el=>el.classList.toggle("hidden",!vistaInterna));
@@ -222,7 +224,6 @@ function render(){
 function entryHtml(p,i){
   const zona=ZONAS[p.zona]||ZONAS.media, cuidado=CUIDADOS[p.cuidado]||CUIDADOS.facil;
   const open=expandido===p.id;
-  const stock=vistaInterna?`<span class="badge" style="color:${p.stock>0?"#4A7A5C":"#B35B4A"};border-color:${p.stock>0?"#4A7A5C":"#B35B4A"}">${p.stock??0} en stock</span>`:"";
   const price=vistaInterna?`<div class="price">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"";
   return `<article class="entry" style="border-left-color:${zona.color}">
     <div class="entry-head" data-id="${p.id}">
@@ -234,7 +235,6 @@ function entryHtml(p,i){
         <div class="badge-row">
           <span class="badge" style="color:${zona.color};border-color:${zona.color}">${zona.label}</span>
           <span class="badge" style="color:${cuidado.color};border-color:${cuidado.color}">${cuidado.label}</span>
-          ${stock}
         </div>
       </div>
       <div class="entry-right">${price}<span class="chevron ${open?"open":""}">▾</span></div>
@@ -276,10 +276,6 @@ function rangeValue(a,b,suffix=""){
   if(av!==null&&bv!==null)return `${av}–${bv}${suffix}`;
   return `${av??bv}${suffix}`;
 }
-function availabilityHtml(p){
-  const stock=Number(p.stock)||0;
-  return `<span class="availability ${stock>0?"available":"soldout"}">${stock>0?"✓ Disponible":"Agotado"}</span>`;
-}
 function infoCard(icon,title,value,accent=""){
   return `<div class="info-card ${accent}"><div class="info-icon">${icon}</div><div><div class="info-title">${title}</div><div class="info-value">${value}</div></div></div>`;
 }
@@ -290,7 +286,6 @@ function detailModalHtml(p){
   const thumbs=p.foto?`<div class="detail-thumb active">${photo.replace('class="detail-hero-photo"','class="detail-thumb-img"')}</div>`:"";
   const internal=vistaInterna;
   const price=internal&&p.precio!=null?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"";
-  const stock=internal?availabilityHtml(p):"";
   const actions=internal?`<button class="detail-action edit" data-detail-edit="${p.id}">✎ Editar</button><button class="detail-action danger" data-detail-delete="${p.id}">🗑 Eliminar</button>`:"";
   const vars=String(p.variedades||"").split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);
   return `<div class="detail-hero">
@@ -308,7 +303,7 @@ function detailModalHtml(p){
           ${infoCard("▣","Acuario mínimo",p.acuarioMinL!=null?`${escapeHtml(p.acuarioMinL)} litros`:"—")}
           ${infoCard("◉","Grupo mínimo",p.cardumenMin===1?"Solitario":p.cardumenMin!=null?`${escapeHtml(p.cardumenMin)} ejemplares`:"—")}
         </div>
-        ${internal?`<div class="detail-commercial"><div><div class="commercial-label">Precio</div>${price||"<div class=\"price-big\">Consultar</div>"}</div><div><div class="commercial-label">Disponibilidad</div>${stock}</div></div>`:""}
+        ${internal?`<div class="detail-commercial"><div><div class="commercial-label">Precio</div>${price||"<div class=\"price-big\">Consultar</div>"}</div></div>`:""}
       </div>
     </div>
     <div class="detail-section-grid">
@@ -321,7 +316,6 @@ function detailModalHtml(p){
     </div>
     <div class="detail-bottom">
       <div class="detail-note"><strong>Variedades comunes</strong><div>${vars.length?vars.map(v=>`<span>${escapeHtml(v)}</span>`).join(""):"No registradas"}</div></div>
-      ${internal?`<div class="detail-note stock-note"><strong>Stock</strong><div class="stock-number">${Number(p.stock)||0}<small> ejemplares</small></div></div>`:""}
     </div>
     <div class="detail-actions-bar">
       <button class="detail-action print" data-detail-print="${p.id}">🖨 Imprimir ficha</button>
@@ -458,7 +452,7 @@ $("heroAddBtn").addEventListener("click",()=>openModal(null));
 const CAMPOS_VACIOS={
   nombreComun:"",nombreCientifico:"",familia:"",zona:"media",temperamento:"pacifico",cuidado:"facil",
   tamanoCm:"",phMin:"",phMax:"",tempMinC:"",tempMaxC:"",acuarioMinL:"",cardumenMin:"",
-  alimentacion:"",compatibilidad:"",reproduccion:"oviparo",longevidadAnios:"",origen:"",variedades:"",precio:"",stock:"",notas:"",foto:null
+  alimentacion:"",compatibilidad:"",reproduccion:"oviparo",longevidadAnios:"",origen:"",variedades:"",precio:"",notas:"",foto:null
 };
 function openModal(pez){
   editando=pez||null;fotoTemp=pez?pez.foto||null:null;
@@ -504,8 +498,7 @@ function formHtml(f){
   <div class="field"><div class="field-label">Compatibilidad</div><textarea id="compatibilidad" rows="2">${escapeHtml(f.compatibilidad)}</textarea></div>
   <div class="field"><div class="field-label">Origen</div><input id="origen" value="${escapeHtml(f.origen)}"></div>
   <div class="field"><div class="field-label">Variedades comunes</div><input id="variedades" value="${escapeHtml(f.variedades||"")}" placeholder="Ej. Media luna, Corona, Velo"></div>
-  <div class="row-2"><div class="field"><div class="field-label">Precio ($)</div><input type="number" min="0" step="100" id="precio" value="${f.precio}"></div>
-  <div class="field"><div class="field-label">Stock (unidades)</div><input type="number" min="0" step="1" id="stock" value="${f.stock}"></div></div>
+  <div class="field"><div class="field-label">Precio de venta ($)</div><input type="number" min="0" step="100" id="precio" value="${f.precio}" placeholder="Ej. 25000"></div>
   <div class="field"><div class="field-label">Notas internas</div><textarea id="notas" rows="2">${escapeHtml(f.notas)}</textarea></div>`;
 }
 function validarForm(){
@@ -563,7 +556,7 @@ $("saveBtn").addEventListener("click",async()=>{
     tamanoCm:num("tamanoCm"),longevidadAnios:num("longevidadAnios"),phMin:num("phMin"),phMax:num("phMax"),
     tempMinC:num("tempMinC"),tempMaxC:num("tempMaxC"),acuarioMinL:num("acuarioMinL"),cardumenMin:num("cardumenMin"),
     alimentacion:$("alimentacion").value.trim(),compatibilidad:$("compatibilidad").value.trim(),origen:$("origen").value.trim(),
-    precio:num("precio"),stock:num("stock"),notas:$("notas").value.trim()
+    precio:num("precio"),notas:$("notas").value.trim()
   };
   const error=validarDatos(datos);if(error){banner(error,"error");return}
   const eraEdicion=Boolean(editando);guardando=true;$("saveBtn").disabled=true;$("saveBtn").textContent=eraEdicion?"Actualizando…":"Guardando…";
