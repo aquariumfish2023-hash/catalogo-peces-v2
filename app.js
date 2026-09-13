@@ -224,7 +224,7 @@ function render(){
 function entryHtml(p,i){
   const zona=ZONAS[p.zona]||ZONAS.media, cuidado=CUIDADOS[p.cuidado]||CUIDADOS.facil;
   const open=expandido===p.id;
-  const price=vistaInterna?`<div class="price">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"";
+  const price=`<div class="price">${p.precio!=null&&p.precio!==""?`$${Number(p.precio||0).toLocaleString("es-CO")}`:"Consultar"}</div>`;
   return `<article class="entry" style="border-left-color:${zona.color}">
     <div class="entry-head" data-id="${p.id}">
       <div class="thumb">${p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun)}" loading="lazy">`:"🐟"}</div>
@@ -285,7 +285,7 @@ function detailModalHtml(p){
   const photo=p.foto?`<img class="detail-hero-photo" src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun||"Pez")}">`:`<div class="detail-hero-placeholder">🐟</div>`;
   const thumbs=p.foto?`<div class="detail-thumb active">${photo.replace('class="detail-hero-photo"','class="detail-thumb-img"')}</div>`:"";
   const internal=vistaInterna;
-  const price=internal&&p.precio!=null?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"";
+  const price=p.precio!=null&&p.precio!==""?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"<div class=\"price-big\">Consultar</div>";
   const actions=internal?`<button class="detail-action edit" data-detail-edit="${p.id}">✎ Editar</button><button class="detail-action danger" data-detail-delete="${p.id}">🗑 Eliminar</button>`:"";
   const vars=String(p.variedades||"").split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);
   return `<div class="detail-hero">
@@ -303,7 +303,7 @@ function detailModalHtml(p){
           ${infoCard("▣","Acuario mínimo",p.acuarioMinL!=null?`${escapeHtml(p.acuarioMinL)} litros`:"—")}
           ${infoCard("◉","Grupo mínimo",p.cardumenMin===1?"Solitario":p.cardumenMin!=null?`${escapeHtml(p.cardumenMin)} ejemplares`:"—")}
         </div>
-        ${internal?`<div class="detail-commercial"><div><div class="commercial-label">Precio</div>${price||"<div class=\"price-big\">Consultar</div>"}</div></div>`:""}
+        ${`<div class="detail-commercial"><div><div class="commercial-label">Precio</div>${price}</div></div>`}
       </div>
     </div>
     <div class="detail-section-grid">
@@ -319,7 +319,7 @@ function detailModalHtml(p){
     </div>
     <div class="detail-actions-bar">
       <button class="detail-action print" data-detail-print="${p.id}">🖨 Imprimir ficha</button>
-      <button class="detail-action share" data-detail-share="${p.id}">↗ Compartir</button>
+      <button class="detail-action share" data-detail-share="${p.id}">↗ Compartir</button><button class="detail-action whatsapp" data-whatsapp-share="${p.id}">💬 WhatsApp</button>
       ${internal?`<div class="detail-spacer"></div>${actions}`:""}
     </div>`;
 }
@@ -334,10 +334,36 @@ function closeDetailModal(){
   $("detailOverlay").classList.add("hidden");
   document.body.classList.remove("modal-open");
 }
+function textoCompartirPez(p){
+  const tienda=($("storeName")?.value||"Mi Acuario").trim();
+  const partes=[
+    `🐟 ${p.nombreComun||"Pez"}`,
+    p.nombreCientifico?`Nombre científico: ${p.nombreCientifico}`:"",
+    p.familia?`Familia: ${p.familia}`:"",
+    p.tamanoCm!=null?`Tamaño adulto: ${p.tamanoCm} cm`:"",
+    p.tempMinC!=null||p.tempMaxC!=null?`Temperatura: ${p.tempMinC??"—"}–${p.tempMaxC??"—"} °C`:"",
+    p.phMin!=null||p.phMax!=null?`pH: ${p.phMin??"—"}–${p.phMax??"—"}`:"",
+    p.acuarioMinL!=null?`Acuario mínimo: ${p.acuarioMinL} L`:"",
+    p.alimentacion?`Alimentación: ${p.alimentacion}`:"",
+    p.compatibilidad?`Compatibilidad: ${p.compatibilidad}`:"",
+    p.origen?`Origen: ${p.origen}`:"",
+    p.precio!=null&&p.precio!==""?`💰 Precio: $${Number(p.precio||0).toLocaleString("es-CO")}`:"Precio: Consultar",
+    `📖 Catálogo: ${tienda}`
+  ].filter(Boolean);
+  return partes.join("\\n");
+}
 function sharePez(p){
-  const text=`${p.nombreComun||"Pez"} — ${p.nombreCientifico||""}${p.familia?`\nFamilia: ${p.familia}`:""}`;
-  if(navigator.share){navigator.share({title:p.nombreComun||"Ficha de pez",text}).catch(()=>{});return;}
-  navigator.clipboard?.writeText(text).then(()=>banner("Datos de la especie copiados para compartir.","success")).catch(()=>banner("No se pudo copiar la ficha.","error"));
+  const text=textoCompartirPez(p);
+  if(navigator.share){
+    navigator.share({title:`${p.nombreComun||"Ficha de pez"} — ${($("storeName")?.value||"Mi Acuario").trim()}`,text}).catch(()=>{});
+    return;
+  }
+  navigator.clipboard?.writeText(text).then(()=>banner("Ficha copiada para compartir.","success")).catch(()=>banner("No se pudo copiar la ficha.","error"));
+}
+function shareWhatsAppPez(p){
+  const text=encodeURIComponent(textoCompartirPez(p));
+  const url=`https://wa.me/?text=${text}`;
+  window.open(url,"_blank","noopener,noreferrer");
 }
 function printPez(p){
   const w=window.open("","_blank","width=900,height=900");
@@ -409,6 +435,7 @@ $("detailShareBtn").addEventListener("click",()=>{const id=document.querySelecto
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("detailOverlay").classList.contains("hidden"))closeDetailModal()});
 document.body.addEventListener("click",e=>{
   const share=e.target.closest("[data-detail-share]"); if(share){const p=catalogo.find(x=>x.id===share.dataset.detailShare);if(p)sharePez(p);return;}
+  const wa=e.target.closest("[data-whatsapp-share]"); if(wa){const p=catalogo.find(x=>x.id===wa.dataset.whatsappShare);if(p)shareWhatsAppPez(p);return;}
   const print=e.target.closest("[data-detail-print]"); if(print){const p=catalogo.find(x=>x.id===print.dataset.detailPrint);if(p)printPez(p);return;}
   const edit=e.target.closest("[data-detail-edit]"); if(edit){const p=catalogo.find(x=>x.id===edit.dataset.detailEdit);closeDetailModal();openModal(p);return;}
   const del=e.target.closest("[data-detail-delete]"); if(del){closeDetailModal();eliminarPez(del.dataset.detailDelete);return;}
