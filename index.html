@@ -76,10 +76,27 @@
       </section>
 
       <section class="toolbar">
-        <div class="search-bar">
-          <span class="search-icon">⌕</span>
-          <input id="searchInput" type="search" autocomplete="off" placeholder="Buscar por nombre, científico o familia…" aria-label="Buscar especies" />
-          <button id="clearSearch" class="clear-search hidden" type="button" aria-label="Limpiar búsqueda">×</button>
+        <div class="search-title-row">
+          <div>
+            <div class="search-heading">🔎 Buscar en tu catálogo</div>
+            <div class="search-help">Nombre, especie, familia, variedad, origen o cualquier palabra de la ficha.</div>
+          </div>
+          <span id="searchResultBadge" class="search-result-badge hidden"></span>
+        </div>
+        <div class="search-wrap">
+          <div class="search-bar">
+            <span class="search-icon">⌕</span>
+            <input id="searchInput" type="search" autocomplete="off" placeholder="Ej.: Betta, Koi, Poeciliidae…" aria-label="Buscar especies" aria-autocomplete="list" aria-controls="searchSuggestions" />
+            <button id="clearSearch" class="clear-search hidden" type="button" aria-label="Limpiar búsqueda">×</button>
+          </div>
+          <div id="searchSuggestions" class="search-suggestions hidden" role="listbox" aria-label="Sugerencias de búsqueda"></div>
+        </div>
+        <div class="quick-searches" id="quickSearches">
+          <span>Buscar rápido:</span>
+          <button type="button" class="quick-chip" data-search="Betta">Betta</button>
+          <button type="button" class="quick-chip" data-search="Guppy">Guppy</button>
+          <button type="button" class="quick-chip" data-search="Koi">Koi</button>
+          <button type="button" class="quick-chip" data-search="Cichlidae">Cíclidos</button>
         </div>
         <div class="toolbar-label">Filtrar por zona</div>
         <div class="filter-row" id="filterZona"></div>

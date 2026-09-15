@@ -245,14 +245,57 @@ function chipHtml(key,label,color,active,group){
 function normalizarTexto(value){
   return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 }
+function textoBusquedaPez(p){
+  return normalizarTexto([p.nombreComun,p.nombreCientifico,p.familia,p.variedades,p.origen,p.alimentacion,p.compatibilidad,p.notas].filter(Boolean).join(" "));
+}
+function tokensBusqueda(value){
+  return normalizarTexto(value).split(/\s+/).filter(Boolean);
+}
+function coincideBusqueda(p, value){
+  const q=normalizarTexto(value);
+  if(!q)return true;
+  const texto=textoBusquedaPez(p);
+  return tokensBusqueda(q).every(token=>texto.includes(token));
+}
+function relevanciaBusqueda(p,value){
+  const q=normalizarTexto(value);
+  if(!q)return 0;
+  const nombre=normalizarTexto(p.nombreComun);
+  const cientifico=normalizarTexto(p.nombreCientifico);
+  const familia=normalizarTexto(p.familia);
+  let score=0;
+  if(nombre===q)score+=100;
+  else if(nombre.startsWith(q))score+=70;
+  else if(nombre.includes(q))score+=45;
+  if(cientifico===q)score+=65;
+  else if(cientifico.includes(q))score+=35;
+  if(familia.includes(q))score+=25;
+  if(normalizarTexto(p.variedades).includes(q))score+=20;
+  if(normalizarTexto(p.origen).includes(q))score+=10;
+  return score;
+}
 function filtradosActuales(){
   return catalogo.filter(p=>{
-    const texto=normalizarTexto(`${p.nombreComun||""} ${p.nombreCientifico||""} ${p.familia||""} ${p.variedades||""} ${p.origen||""}`);
-    if(busqueda&&!texto.includes(normalizarTexto(busqueda)))return false;
+    if(!coincideBusqueda(p,busqueda))return false;
     if(filtroZona&&p.zona!==filtroZona)return false;
     if(filtroCuidado&&p.cuidado!==filtroCuidado)return false;
     return true;
   });
+}
+function escapeRegExp(s){return String(s||"").replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
+function resaltar(texto,consulta){
+  const safe=escapeHtml(texto||"");
+  const tokens=[...new Set(tokensBusqueda(consulta).filter(t=>t.length>=2))];
+  if(!tokens.length)return safe;
+  const pattern=tokens.map(escapeRegExp).join("|");
+  try{return safe.replace(new RegExp(`(${pattern})`,"gi"),"<mark>$1</mark>")}catch{return safe}
+}
+function renderSearchBadge(filtrados){
+  const badge=$("searchResultBadge");
+  if(!badge)return;
+  if(!busqueda){badge.classList.add("hidden");badge.textContent="";return}
+  badge.classList.remove("hidden");
+  badge.textContent=`${filtrados.length} ${filtrados.length===1?"resultado":"resultados"}`;
 }
 function render(){
   const filtrados=filtradosActuales();
@@ -262,12 +305,15 @@ function render(){
   $("waterCount").textContent=new Set(catalogo.map(p=>p.zona).filter(Boolean)).size;
   $("clearSearch").classList.toggle("hidden",!busqueda);
   $("clearFilters").classList.toggle("hidden",!(busqueda||filtroZona||filtroCuidado));
+  renderSearchBadge(filtrados);
   document.querySelectorAll(".internal-only").forEach(el=>el.classList.toggle("hidden",!vistaInterna));
   if(!filtrados.length){
-    $("list").innerHTML=`<div class="empty">${catalogo.length?"No hay especies que coincidan con los filtros.":"Aún no tienes especies en el catálogo. Pulsa “＋ Agregar especie” para comenzar."}</div>`;
+    $("list").innerHTML=`<div class="empty">${catalogo.length?`No encontramos coincidencias para <strong>“${escapeHtml(busqueda)}”</strong>. Prueba con el nombre, una variedad o una familia.`:"Aún no tienes especies en el catálogo. Pulsa “＋ Agregar especie” para comenzar."}</div>`;
+    renderSearchSuggestions();
     return;
   }
   $("list").innerHTML=filtrados.map((p,i)=>entryHtml(p,i)).join("");
+  renderSearchSuggestions();
 }
 function entryHtml(p,i){
   const zona=ZONAS[p.zona]||ZONAS.media, cuidado=CUIDADOS[p.cuidado]||CUIDADOS.facil;
@@ -278,8 +324,8 @@ function entryHtml(p,i){
       <div class="thumb">${p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun)}" loading="lazy">`:"🐟"}</div>
       <div>
         <div class="entry-index">${String(i+1).padStart(2,"0")}</div>
-        <div class="entry-name">${escapeHtml(p.nombreComun)}</div>
-        <div class="entry-latin">${escapeHtml(p.nombreCientifico)}</div>
+        <div class="entry-name">${resaltar(p.nombreComun,busqueda)}</div>
+        <div class="entry-latin">${resaltar(p.nombreCientifico,busqueda)}</div>
         <div class="badge-row">
           <span class="badge" style="color:${zona.color};border-color:${zona.color}">${zona.label}</span>
           <span class="badge" style="color:${cuidado.color};border-color:${cuidado.color}">${cuidado.label}</span>
@@ -562,11 +608,59 @@ document.body.addEventListener("click",e=>{
   const del=e.target.closest("[data-detail-delete]"); if(del){closeDetailModal();eliminarPez(del.dataset.detailDelete);return;}
 });
 
-$("searchInput").addEventListener("input",e=>{busqueda=e.target.value.trim();render()});
-$("clearSearch").addEventListener("click",()=>{$("searchInput").value="";busqueda="";render()});
-$("clearFilters").addEventListener("click",()=>{
-  busqueda="";filtroZona=null;filtroCuidado=null;$("searchInput").value="";renderFiltros();render();
+let suggestionIndex=-1;
+function renderSearchSuggestions(){
+  const box=$("searchSuggestions");
+  if(!box)return;
+  const q=normalizarTexto(busqueda);
+  if(!q){box.classList.add("hidden");box.innerHTML="";suggestionIndex=-1;return}
+  const candidatos=catalogo.filter(p=>coincideBusqueda(p,q))
+    .sort((a,b)=>relevanciaBusqueda(b,q)-relevanciaBusqueda(a,q) || String(a.nombreComun||"").localeCompare(String(b.nombreComun||""),"es"))
+    .slice(0,7);
+  if(!candidatos.length){
+    box.innerHTML='<div class="search-suggestion-empty">No hay coincidencias. Prueba con otra palabra.</div>';
+    box.classList.remove("hidden"); suggestionIndex=-1; return;
+  }
+  box.innerHTML=candidatos.map((p,i)=>`<button type="button" class="suggestion ${i===suggestionIndex?"active":""}" role="option" aria-selected="${i===suggestionIndex}" data-suggestion-id="${p.id}">
+    <span class="suggestion-icon">${p.foto?`<img src="${escapeHtml(p.foto)}" alt="" loading="lazy">`:"🐟"}</span>
+    <span class="suggestion-main"><span class="suggestion-name">${resaltar(p.nombreComun,busqueda)}</span><span class="suggestion-latin">${resaltar(p.nombreCientifico,busqueda)}</span><span class="suggestion-meta">${resaltar(p.familia||"",busqueda)}${p.variedades?` · ${resaltar(String(p.variedades).split(/[,;\n]+/)[0],busqueda)}`:""}</span></span>
+    <span class="suggestion-arrow">›</span>
+  </button>`).join("");
+  box.classList.remove("hidden");
+}
+function seleccionarSugerencia(id){
+  const p=catalogo.find(x=>x.id===id);
+  if(!p)return;
+  busqueda=p.nombreComun||"";
+  $("searchInput").value=busqueda;
+  suggestionIndex=-1;
+  render();
+  $("searchSuggestions")?.classList.add("hidden");
+  $("searchInput")?.focus();
+}
+$("searchInput").addEventListener("input",e=>{busqueda=e.target.value.trim();suggestionIndex=-1;render()});
+$("searchInput").addEventListener("keydown",e=>{
+  const box=$("searchSuggestions");
+  const items=box?Array.from(box.querySelectorAll("[data-suggestion-id]")):[];
+  if(e.key==="ArrowDown"&&items.length){e.preventDefault();suggestionIndex=(suggestionIndex+1)%items.length;renderSearchSuggestions();items[suggestionIndex]?.scrollIntoView({block:"nearest"});return}
+  if(e.key==="ArrowUp"&&items.length){e.preventDefault();suggestionIndex=(suggestionIndex-1+items.length)%items.length;renderSearchSuggestions();items[suggestionIndex]?.scrollIntoView({block:"nearest"});return}
+  if(e.key==="Enter"&&suggestionIndex>=0&&items[suggestionIndex]){e.preventDefault();seleccionarSugerencia(items[suggestionIndex].dataset.suggestionId);return}
+  if(e.key==="Escape"){box?.classList.add("hidden");suggestionIndex=-1}
 });
+$("clearSearch").addEventListener("click",()=>{$("searchInput").value="";busqueda="";suggestionIndex=-1;render();$("searchInput").focus()});
+$("clearFilters").addEventListener("click",()=>{
+  busqueda="";filtroZona=null;filtroCuidado=null;suggestionIndex=-1;$("searchInput").value="";renderFiltros();render();
+});
+$("searchSuggestions").addEventListener("click",e=>{
+  const item=e.target.closest("[data-suggestion-id]");
+  if(item)seleccionarSugerencia(item.dataset.suggestionId);
+});
+document.body.addEventListener("click",e=>{
+  if(!e.target.closest(".search-wrap"))$("searchSuggestions")?.classList.add("hidden");
+});
+document.querySelectorAll(".quick-chip").forEach(btn=>btn.addEventListener("click",()=>{
+  busqueda=btn.dataset.search||"";$("searchInput").value=busqueda;suggestionIndex=-1;render();$("searchInput").focus();
+}));
 document.body.addEventListener("click",e=>{
   const chip=e.target.closest(".chip");
   if(chip){
