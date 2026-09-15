@@ -163,7 +163,7 @@ const STORE_NAME_KEY = "catalogoPeces.storeName";
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_FIRESTORE_IMAGE_BYTES = 500 * 1024;
 
-let catalogo=[], busqueda="", filtroZona=null, filtroCuidado=null;
+let catalogo=[], busqueda="", filtroZona=null, filtroCuidado=null, soloFavoritos=false;
 let expandido=null, vistaInterna=true, editando=null, fotoTemp=null;
 let guardando=false, usuarioActual=null, unsubscribeCatalogo=null;
 
@@ -279,6 +279,7 @@ function filtradosActuales(){
     if(!coincideBusqueda(p,busqueda))return false;
     if(filtroZona&&p.zona!==filtroZona)return false;
     if(filtroCuidado&&p.cuidado!==filtroCuidado)return false;
+    if(soloFavoritos&&!p.favorito)return false;
     return true;
   });
 }
@@ -304,7 +305,9 @@ function render(){
   $("familyCount").textContent=new Set(catalogo.map(p=>String(p.familia||"").trim().toLowerCase()).filter(Boolean)).size;
   $("waterCount").textContent=new Set(catalogo.map(p=>p.zona).filter(Boolean)).size;
   $("clearSearch").classList.toggle("hidden",!busqueda);
-  $("clearFilters").classList.toggle("hidden",!(busqueda||filtroZona||filtroCuidado));
+  $("clearFilters").classList.toggle("hidden",!(busqueda||filtroZona||filtroCuidado||soloFavoritos));
+  $("favoritesToggle")?.classList.toggle("active",soloFavoritos);
+  if($("favoritesToggle")) $("favoritesToggle").textContent=soloFavoritos?"★ Ver todos":"☆ Favoritos";
   renderSearchBadge(filtrados);
   document.querySelectorAll(".internal-only").forEach(el=>el.classList.toggle("hidden",!vistaInterna));
   if(!filtrados.length){
@@ -331,15 +334,17 @@ function entryHtml(p,i){
           <span class="badge" style="color:${cuidado.color};border-color:${cuidado.color}">${cuidado.label}</span>
         </div>
       </div>
-      <div class="entry-right">${price}<span class="chevron ${open?"open":""}">▾</span></div>
+      <div class="entry-right"><button type="button" class="favorite-btn ${p.favorito?"active":""}" data-favorite="${p.id}" title="${p.favorito?"Quitar de favoritos":"Agregar a favoritos"}" aria-label="${p.favorito?"Quitar de favoritos":"Agregar a favoritos"}">${p.favorito?"★":"☆"}</button>${price}<span class="chevron ${open?"open":""}">▾</span></div>
     </div>
     ${open?detailHtml(p):""}
   </article>`;
 }
 function detailHtml(p){
   const photo=p.foto?`<img src="${escapeHtml(p.foto)}" class="detail-photo" alt="${escapeHtml(p.nombreComun)}" loading="lazy">`:"";
+  const favoriteAction=`<button class="detail-action favorite-detail ${p.favorito?"active":""}" data-detail-favorite="${p.id}">${p.favorito?"★ Quitar de favoritos":"☆ Agregar a favoritos"}</button>`;
   const actions=vistaInterna?`<div class="actions-row"><button class="edit-btn" data-edit="${p.id}">✎ Editar</button><button class="del-btn" data-del="${p.id}">🗑 Eliminar</button></div>`:"";
   return `<div class="detail">${photo}
+    <div class="detail-favorite-row">${favoriteAction}</div>
     <div class="stat-grid">
       ${stat("Tamaño adulto",p.tamanoCm!=null?`${p.tamanoCm} cm`:"-")}
       ${stat("Temperatura",`${p.tempMinC??"-"}–${p.tempMaxC??"-"} °C`)}
@@ -380,7 +385,8 @@ function detailModalHtml(p){
   const thumbs=p.foto?`<div class="detail-thumb active">${photo.replace('class="detail-hero-photo"','class="detail-thumb-img"')}</div>`:"";
   const internal=vistaInterna;
   const price=p.precio!=null&&p.precio!==""?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"<div class=\"price-big\">Consultar</div>";
-  const actions=internal?`<button class="detail-action edit" data-detail-edit="${p.id}">✎ Editar</button><button class="detail-action danger" data-detail-delete="${p.id}">🗑 Eliminar</button>`:"";
+  const favoriteAction=`<button class="detail-action favorite-detail ${p.favorito?"active":""}" data-detail-favorite="${p.id}">${p.favorito?"★ Quitar de favoritos":"☆ Agregar a favoritos"}</button>`;
+  const actions=internal?`${favoriteAction}<button class="detail-action edit" data-detail-edit="${p.id}">✎ Editar</button><button class="detail-action danger" data-detail-delete="${p.id}">🗑 Eliminar</button>`:favoriteAction;
   const vars=String(p.variedades||"").split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);
   return `<div class="detail-hero">
       <div class="detail-gallery"><div class="detail-main-photo">${photo}</div>${vars.length?`<div class="detail-variety-row">${vars.map(v=>`<span>${escapeHtml(v)}</span>`).join("")}</div>`:""}${thumbs?`<div class="detail-thumbs">${thumbs}</div>`:""}</div>
@@ -604,6 +610,7 @@ document.body.addEventListener("click",e=>{
   const share=e.target.closest("[data-detail-share]"); if(share){const p=catalogo.find(x=>x.id===share.dataset.detailShare);if(p)sharePez(p);return;}
   const wa=e.target.closest("[data-whatsapp-share]"); if(wa){const p=catalogo.find(x=>x.id===wa.dataset.whatsappShare);if(p)shareWhatsAppPez(p);return;}
   const print=e.target.closest("[data-detail-print]"); if(print){const p=catalogo.find(x=>x.id===print.dataset.detailPrint);if(p)printPez(p);return;}
+  const fav=e.target.closest("[data-detail-favorite]"); if(fav){toggleFavorito(fav.dataset.detailFavorite);return;}
   const edit=e.target.closest("[data-detail-edit]"); if(edit){const p=catalogo.find(x=>x.id===edit.dataset.detailEdit);closeDetailModal();openModal(p);return;}
   const del=e.target.closest("[data-detail-delete]"); if(del){closeDetailModal();eliminarPez(del.dataset.detailDelete);return;}
 });
@@ -648,8 +655,21 @@ $("searchInput").addEventListener("keydown",e=>{
   if(e.key==="Escape"){box?.classList.add("hidden");suggestionIndex=-1}
 });
 $("clearSearch").addEventListener("click",()=>{$("searchInput").value="";busqueda="";suggestionIndex=-1;render();$("searchInput").focus()});
+async function toggleFavorito(id){
+  const pez=catalogo.find(p=>p.id===id);
+  if(!pez)return;
+  try{
+    await updateDoc(doc(db,"peces",id),{favorito:!Boolean(pez.favorito)});
+    banner(pez.favorito?"Quitado de favoritos.":"Agregado a favoritos.","success");
+  }catch(err){
+    console.error(err);
+    banner("No se pudo actualizar el favorito. Revisa la conexión.","error");
+  }
+}
+
+$("favoritesToggle")?.addEventListener("click",()=>{soloFavoritos=!soloFavoritos;render()});
 $("clearFilters").addEventListener("click",()=>{
-  busqueda="";filtroZona=null;filtroCuidado=null;suggestionIndex=-1;$("searchInput").value="";renderFiltros();render();
+  busqueda="";filtroZona=null;filtroCuidado=null;soloFavoritos=false;suggestionIndex=-1;$("searchInput").value="";renderFiltros();render();
 });
 $("searchSuggestions").addEventListener("click",e=>{
   const item=e.target.closest("[data-suggestion-id]");
@@ -671,6 +691,8 @@ document.body.addEventListener("click",e=>{
   }
   const editBtn=e.target.closest("[data-edit]");
   if(editBtn){e.stopPropagation();openModal(catalogo.find(p=>p.id===editBtn.dataset.edit));return}
+  const favBtn=e.target.closest("[data-favorite]");
+  if(favBtn){e.stopPropagation();toggleFavorito(favBtn.dataset.favorite);return}
   const delBtn=e.target.closest("[data-del]");
   if(delBtn){e.stopPropagation();eliminarPez(delBtn.dataset.del);return}
   const head=e.target.closest(".entry-head");
