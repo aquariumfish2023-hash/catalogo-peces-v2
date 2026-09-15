@@ -164,6 +164,7 @@ const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_FIRESTORE_IMAGE_BYTES = 500 * 1024;
 
 let catalogo=[], busqueda="", filtroZona=null, filtroCuidado=null, soloFavoritos=false;
+let filtroFamilia="", filtroTemp="", filtroPh="", filtroAcuario="";
 let expandido=null, vistaInterna=true, editando=null, fotoTemp=null;
 let guardando=false, usuarioActual=null, unsubscribeCatalogo=null;
 
@@ -242,6 +243,26 @@ function renderFiltros(){
 function chipHtml(key,label,color,active,group){
   return `<button class="chip ${active?"active":""}" data-group="${group}" data-key="${key}" style="border-color:${color};background:${active?color:"transparent"};color:${active?"#fff":color}">${label}</button>`;
 }
+function familiasDisponibles(){
+  return [...new Set(catalogo.map(p=>String(p.familia||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+}
+function renderFiltrosAvanzados(){
+  const fam=$("filterFamilia");
+  if(fam){
+    const opciones=familiasDisponibles();
+    fam.innerHTML='<option value="">Todas las familias</option>'+opciones.map(f=>`<option value="${escapeHtml(f)}" ${filtroFamilia===f?"selected":""}>${escapeHtml(f)}</option>`).join("");
+  }
+  const temp=$("filterTemp"); if(temp) temp.value=filtroTemp;
+  const ph=$("filterPh"); if(ph) ph.value=filtroPh;
+  const ac=$("filterAcuario"); if(ac) ac.value=filtroAcuario;
+  const advancedActive=Boolean(filtroFamilia||filtroTemp||filtroPh||filtroAcuario);
+  $("advancedFilterBadge")?.classList.toggle("hidden",!advancedActive);
+}
+function filtrosActivos(){return Boolean(busqueda||filtroZona||filtroCuidado||soloFavoritos||filtroFamilia||filtroTemp||filtroPh||filtroAcuario)}
+function cumpleRangoMinMax(value,min,max){
+  if(value===null||value===undefined||value==="")return false;
+  const n=Number(value); return Number.isFinite(n)&&n>=min&&n<=max;
+}
 function normalizarTexto(value){
   return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 }
@@ -279,6 +300,19 @@ function filtradosActuales(){
     if(!coincideBusqueda(p,busqueda))return false;
     if(filtroZona&&p.zona!==filtroZona)return false;
     if(filtroCuidado&&p.cuidado!==filtroCuidado)return false;
+    if(filtroFamilia&&String(p.familia||"")!==filtroFamilia)return false;
+    if(filtroTemp){
+      const t=Number(filtroTemp);
+      if(!Number.isFinite(t) || Number(p.tempMinC)>t || Number(p.tempMaxC)<t)return false;
+    }
+    if(filtroPh){
+      const ph=Number(filtroPh);
+      if(!Number.isFinite(ph) || Number(p.phMin)>ph || Number(p.phMax)<ph)return false;
+    }
+    if(filtroAcuario){
+      const litros=Number(filtroAcuario);
+      if(!Number.isFinite(litros) || Number(p.acuarioMinL)>litros)return false;
+    }
     if(soloFavoritos&&!p.favorito)return false;
     return true;
   });
@@ -305,7 +339,8 @@ function render(){
   $("familyCount").textContent=new Set(catalogo.map(p=>String(p.familia||"").trim().toLowerCase()).filter(Boolean)).size;
   $("waterCount").textContent=new Set(catalogo.map(p=>p.zona).filter(Boolean)).size;
   $("clearSearch").classList.toggle("hidden",!busqueda);
-  $("clearFilters").classList.toggle("hidden",!(busqueda||filtroZona||filtroCuidado||soloFavoritos));
+  $("clearFilters").classList.toggle("hidden",!filtrosActivos());
+  renderFiltrosAvanzados();
   $("favoritesToggle")?.classList.toggle("active",soloFavoritos);
   if($("favoritesToggle")) $("favoritesToggle").textContent=soloFavoritos?"★ Ver todos":"☆ Favoritos";
   renderSearchBadge(filtrados);
@@ -670,7 +705,7 @@ async function toggleFavorito(id){
 
 $("favoritesToggle")?.addEventListener("click",()=>{soloFavoritos=!soloFavoritos;render()});
 $("clearFilters").addEventListener("click",()=>{
-  busqueda="";filtroZona=null;filtroCuidado=null;soloFavoritos=false;suggestionIndex=-1;$("searchInput").value="";renderFiltros();render();
+  busqueda="";filtroZona=null;filtroCuidado=null;soloFavoritos=false;filtroFamilia="";filtroTemp="";filtroPh="";filtroAcuario="";suggestionIndex=-1;$("searchInput").value="";renderFiltros();render();
 });
 $("searchSuggestions").addEventListener("click",e=>{
   const item=e.target.closest("[data-suggestion-id]");
@@ -678,6 +713,22 @@ $("searchSuggestions").addEventListener("click",e=>{
 });
 document.body.addEventListener("click",e=>{
   if(!e.target.closest(".search-wrap"))$("searchSuggestions")?.classList.add("hidden");
+});
+["filterFamilia","filterTemp","filterPh","filterAcuario"].forEach(id=>$(id)?.addEventListener("input",e=>{
+  if(id==="filterFamilia")filtroFamilia=e.target.value;
+  if(id==="filterTemp")filtroTemp=e.target.value;
+  if(id==="filterPh")filtroPh=e.target.value;
+  if(id==="filterAcuario")filtroAcuario=e.target.value;
+  render();
+}));
+$("advancedFiltersToggle")?.addEventListener("click",()=>{
+  const panel=$("advancedFiltersPanel");
+  const open=panel?.classList.toggle("hidden")===false;
+  $("advancedFiltersToggle").setAttribute("aria-expanded",String(open));
+  if(open)renderFiltrosAvanzados();
+});
+$("clearAdvancedFilters")?.addEventListener("click",()=>{
+  filtroFamilia="";filtroTemp="";filtroPh="";filtroAcuario="";render();
 });
 document.querySelectorAll(".quick-chip").forEach(btn=>btn.addEventListener("click",()=>{
   busqueda=btn.dataset.search||"";$("searchInput").value=busqueda;suggestionIndex=-1;render();$("searchInput").focus();
