@@ -437,8 +437,8 @@ function renderAsistente(){
         ' · pH '+escapeHtml(rangeValue(p.phMin,p.phMax))+
         ' · '+escapeHtml(p.acuarioMinL||"—")+' L mín.';
       return '<button type="button" class="assistant-card" data-assistant-id="'+escapeHtml(p.id)+'">'+
-        '<div class="assistant-thumb">'+photo+'</div>'+\
-        '<div><strong>'+name+'</strong><em>'+scientific+'</em><span>'+conditions+'</span></div>'+\
+        '<div class="assistant-thumb">'+photo+'</div>'+
+        '<div><strong>'+name+'</strong><em>'+scientific+'</em><span>'+conditions+'</span></div>'+
         '</button>';
     }
 
