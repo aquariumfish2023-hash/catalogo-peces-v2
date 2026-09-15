@@ -98,6 +98,54 @@ window.ingresarConGoogle = async function(){
   }
 };
 
+
+// ============================================================
+// CATÁLOGO INTERNO AUTOMÁTICO — sin APIs externas y gratuito
+// ============================================================
+const FICHAS_BASE = [
+  {nombreComun:"Betta splendens", nombreCientifico:"Betta splendens", familia:"Osphronemidae", zona:"superficie", temperamento:"semi-agresivo", cuidado:"facil", tamanoCm:7, phMin:6, phMax:8, tempMinC:24, tempMaxC:28, acuarioMinL:20, cardumenMin:1, alimentacion:"Alimento de buena calidad para bettas, pellets y ocasionalmente alimento vivo o congelado.", compatibilidad:"Preferiblemente solitario; los machos no deben mantenerse juntos.", origen:"Tailandia, Camboya, Laos y Vietnam", variedades:"Plakat, Halfmoon, Crowntail, Veiltail, Koi, Galaxy", reproduccion:"oviparo", longevidadAnios:3, notas:"Especie laberíntida que puede respirar aire atmosférico."},
+  {nombreComun:"Guppy", nombreCientifico:"Poecilia reticulata", familia:"Poeciliidae", zona:"superficie", temperamento:"pacifico", cuidado:"facil", tamanoCm:5, phMin:6.8, phMax:8, tempMinC:22, tempMaxC:28, acuarioMinL:40, cardumenMin:6, alimentacion:"Escamas, microgránulos y alimento congelado o vivo variado.", compatibilidad:"Muy pacífico; ideal con otros peces comunitarios de tamaño similar.", origen:"Venezuela, Guyana, Trinidad y norte de Brasil", variedades:"Moscow, Cobra, Tuxedo, Dumbo, Endler", reproduccion:"viviparo", longevidadAnios:2, notas:"Reproductor muy prolífico; conviene mantener una proporción adecuada entre machos y hembras."},
+  {nombreComun:"Platy", nombreCientifico:"Xiphophorus maculatus", familia:"Poeciliidae", zona:"media", temperamento:"pacifico", cuidado:"facil", tamanoCm:6, phMin:7, phMax:8.2, tempMinC:22, tempMaxC:28, acuarioMinL:60, cardumenMin:6, alimentacion:"Escamas y gránulos con aporte vegetal, complementados con alimento congelado.", compatibilidad:"Excelente para acuarios comunitarios tranquilos.", origen:"México y América Central", variedades:"Mickey Mouse, Red Wagtail, Sunset, Tuxedo", reproduccion:"viviparo", longevidadAnios:3, notas:"Activo y resistente, recomendado para principiantes."},
+  {nombreComun:"Molly", nombreCientifico:"Poecilia sphenops", familia:"Poeciliidae", zona:"media", temperamento:"pacifico", cuidado:"facil", tamanoCm:10, phMin:7, phMax:8.5, tempMinC:24, tempMaxC:28, acuarioMinL:80, cardumenMin:4, alimentacion:"Escamas, gránulos y alimentos con contenido vegetal.", compatibilidad:"Pacífico con especies comunitarias de tamaño similar.", origen:"México, América Central y norte de Sudamérica", variedades:"Black, Dalmatian, Gold Dust, Lyretail, Balloon", reproduccion:"viviparo", longevidadAnios:4, notas:"Aprecia agua mineralizada y buena filtración."},
+  {nombreComun:"Pez ángel", nombreCientifico:"Pterophyllum scalare", familia:"Cichlidae", zona:"media", temperamento:"pacifico", cuidado:"medio", tamanoCm:15, phMin:6, phMax:7.5, tempMinC:24, tempMaxC:30, acuarioMinL:150, cardumenMin:5, alimentacion:"Pellets para cíclidos, escamas de calidad y alimento congelado variado.", compatibilidad:"Comunitario cuando se mantiene con peces tranquilos y suficientemente grandes.", origen:"Cuenca del Amazonas y otros ríos de Sudamérica", variedades:"Koi, Gold, Marble, Black, Zebra", reproduccion:"oviparo", longevidadAnios:10, notas:"Necesita altura de acuario y espacio para formar territorios."},
+  {nombreComun:"Pez disco", nombreCientifico:"Symphysodon spp.", familia:"Cichlidae", zona:"media", temperamento:"pacifico", cuidado:"dificil", tamanoCm:20, phMin:5.5, phMax:7, tempMinC:27, tempMaxC:30, acuarioMinL:250, cardumenMin:5, alimentacion:"Alimento especializado, gránulos y alimentos congelados de alta calidad.", compatibilidad:"Pacífico, pero sensible a compañeros competitivos y a cambios de agua.", origen:"Cuenca del Amazonas", variedades:"Turquoise, Blue Diamond, Pigeon Blood, Red Melon, Leopard", reproduccion:"oviparo", longevidadAnios:10, notas:"Requiere excelente calidad de agua, estabilidad y cambios frecuentes."},
+  {nombreComun:"Corydora", nombreCientifico:"Corydoras spp.", familia:"Callichthyidae", zona:"fondo", temperamento:"pacifico", cuidado:"facil", tamanoCm:6, phMin:6, phMax:7.5, tempMinC:22, tempMaxC:27, acuarioMinL:60, cardumenMin:6, alimentacion:"Tabletas para peces de fondo, gránulos hundibles y alimentos congelados.", compatibilidad:"Muy pacífica y excelente para acuarios comunitarios.", origen:"Sudamérica", variedades:"Panda, Bronze, Sterbai, Julii, Albino", reproduccion:"oviparo", longevidadAnios:5, notas:"Debe mantenerse en grupo y sobre sustrato suave para proteger sus barbillas."},
+  {nombreComun:"Ancistrus", nombreCientifico:"Ancistrus spp.", familia:"Loricariidae", zona:"fondo", temperamento:"pacifico", cuidado:"facil", tamanoCm:12, phMin:6, phMax:7.8, tempMinC:23, tempMaxC:28, acuarioMinL:80, cardumenMin:1, alimentacion:"Tabletas vegetales, verduras escaldadas y alimento para peces de fondo.", compatibilidad:"Pacífico; puede presentar territorialidad entre machos adultos.", origen:"Sudamérica", variedades:"Super Red, Albino, Longfin, Calico", reproduccion:"oviparo", longevidadAnios:8, notas:"Agradece troncos naturales para refugio y alimentación."},
+  {nombreComun:"Tetra neón", nombreCientifico:"Paracheirodon innesi", familia:"Characidae", zona:"media", temperamento:"pacifico", cuidado:"facil", tamanoCm:4, phMin:5, phMax:7.5, tempMinC:20, tempMaxC:26, acuarioMinL:50, cardumenMin:8, alimentacion:"Microgránulos, escamas finas y pequeños alimentos congelados.", compatibilidad:"Muy pacífico; mantener en cardumen y con compañeros pequeños.", origen:"Cuenca amazónica", variedades:"Neón clásico", reproduccion:"oviparo", longevidadAnios:5, notas:"El cardumen luce mejor con iluminación moderada y vegetación."},
+  {nombreComun:"Tetra cardenal", nombreCientifico:"Paracheirodon axelrodi", familia:"Characidae", zona:"media", temperamento:"pacifico", cuidado:"medio", tamanoCm:5, phMin:4.5, phMax:7, tempMinC:23, tempMaxC:28, acuarioMinL:60, cardumenMin:10, alimentacion:"Microgránulos, escamas finas y alimento congelado de pequeño tamaño.", compatibilidad:"Muy pacífico; excelente pez de cardumen.", origen:"Brasil, Colombia y Venezuela", variedades:"Cardenal clásico", reproduccion:"oviparo", longevidadAnios:5, notas:"Prefiere agua estable y ligeramente ácida."},
+  {nombreComun:"Goldfish", nombreCientifico:"Carassius auratus", familia:"Cyprinidae", zona:"media", temperamento:"pacifico", cuidado:"medio", tamanoCm:25, phMin:6.5, phMax:8, tempMinC:18, tempMaxC:24, acuarioMinL:120, cardumenMin:2, alimentacion:"Pellets de calidad, vegetales y alimento congelado en cantidades controladas.", compatibilidad:"Pacífico, pero requiere compañeros compatibles con agua más fresca y buena filtración.", origen:"Asia oriental", variedades:"Oranda, Ranchu, Ryukin, Fantail, Telescopio", reproduccion:"oviparo", longevidadAnios:15, notas:"Produce bastante carga biológica; necesita gran volumen y filtración eficiente."},
+  {nombreComun:"Koi", nombreCientifico:"Cyprinus carpio", familia:"Cyprinidae", zona:"media", temperamento:"pacifico", cuidado:"medio", tamanoCm:60, phMin:7, phMax:8.5, tempMinC:15, tempMaxC:25, acuarioMinL:1000, cardumenMin:3, alimentacion:"Alimento específico para koi, pellets flotantes y complementos vegetales.", compatibilidad:"Pacífico con otros koi y peces compatibles de estanque.", origen:"Asia oriental", variedades:"Kohaku, Sanke, Showa, Asagi, Shiro Utsuri", reproduccion:"oviparo", longevidadAnios:25, notas:"Idealmente debe mantenerse en estanque por su tamaño adulto."},
+  {nombreComun:"Gourami enano", nombreCientifico:"Trichogaster lalius", familia:"Osphronemidae", zona:"superficie", temperamento:"pacifico", cuidado:"medio", tamanoCm:8, phMin:6, phMax:7.5, tempMinC:24, tempMaxC:28, acuarioMinL:60, cardumenMin:1, alimentacion:"Escamas, microgránulos y pequeños alimentos congelados.", compatibilidad:"Generalmente pacífico; evitar compañeros demasiado agresivos.", origen:"India, Pakistán y Bangladesh", variedades:"Blue, Neon Blue, Flame, Honey", reproduccion:"oviparo", longevidadAnios:4, notas:"Laberíntido que agradece vegetación y zonas tranquilas en superficie."},
+  {nombreComun:"Ramirezi", nombreCientifico:"Mikrogeophagus ramirezi", familia:"Cichlidae", zona:"fondo", temperamento:"pacifico", cuidado:"dificil", tamanoCm:6, phMin:5, phMax:7, tempMinC:26, tempMaxC:30, acuarioMinL:60, cardumenMin:2, alimentacion:"Microgránulos y alimentos congelados o vivos de pequeño tamaño.", compatibilidad:"Pacífico, pero territorial durante la reproducción.", origen:"Venezuela y Colombia", variedades:"Electric Blue, Gold, Wild", reproduccion:"oviparo", longevidadAnios:3, notas:"Muy sensible a mala calidad de agua y cambios bruscos."},
+  {nombreComun:"Escalar koi", nombreCientifico:"Pterophyllum scalare", familia:"Cichlidae", zona:"media", temperamento:"pacifico", cuidado:"medio", tamanoCm:15, phMin:6, phMax:7.5, tempMinC:24, tempMaxC:30, acuarioMinL:150, cardumenMin:5, alimentacion:"Pellets, escamas y alimentos congelados variados.", compatibilidad:"Comunitario con peces compatibles; puede depredar peces muy pequeños.", origen:"Cuenca del Amazonas", variedades:"Koi", reproduccion:"oviparo", longevidadAnios:10, notas:"Variedad de color del pez ángel; requiere un acuario alto."}
+];
+
+function buscarFichaBase(nombre){
+  const n=normalizarTexto(nombre);
+  if(!n)return null;
+  return FICHAS_BASE.find(f=>normalizarTexto(f.nombreComun)===n) ||
+         FICHAS_BASE.find(f=>normalizarTexto(f.nombreCientifico)===n) ||
+         FICHAS_BASE.find(f=>normalizarTexto(f.nombreComun).includes(n) || n.includes(normalizarTexto(f.nombreComun))) || null;
+}
+function aplicarFichaBase(ficha){
+  if(!ficha)return;
+  const campos=["nombreComun","nombreCientifico","familia","zona","temperamento","cuidado","reproduccion","tamanoCm","longevidadAnios","phMin","phMax","tempMinC","tempMaxC","acuarioMinL","cardumenMin","alimentacion","compatibilidad","origen","variedades","notas"];
+  campos.forEach(id=>{ if($(id) && ficha[id]!==undefined) $(id).value=ficha[id] ?? ""; });
+  validarForm();
+  const box=$("autoFillStatus");
+  if(box){box.className="auto-fill-status success";box.innerHTML=`✓ Datos encontrados para <strong>${escapeHtml(ficha.nombreComun)}</strong>. Revisa la ficha y guarda cuando esté lista.`;}
+}
+function intentarCompletarFicha(){
+  const nombre=$("nombreComun")?.value.trim()||"";
+  const ficha=buscarFichaBase(nombre);
+  if(!ficha){
+    const box=$("autoFillStatus");
+    if(box){box.className="auto-fill-status warning";box.textContent="No encontramos ese pez en el catálogo interno. Puedes completar la ficha manualmente y quedará guardada normalmente.";}
+    return;
+  }
+  aplicarFichaBase(ficha);
+}
+
 const ZONAS = {
   superficie: {label:"Superficie", color:"#C97B3D"},
   media: {label:"Media agua", color:"#4A90A4"},
@@ -560,8 +608,18 @@ function openModal(pez){
   $("modalBody").innerHTML=formHtml(pez||CAMPOS_VACIOS);
   $("modalOverlay").classList.remove("hidden");
   $("fotoInput").addEventListener("change",handleFotoChange);
-  $("nombreComun").addEventListener("input",validarForm);
+  $("nombreComun").addEventListener("input",()=>{
+    validarForm();
+    const box=$("autoFillStatus");
+    const ficha=buscarFichaBase($("nombreComun").value);
+    if(box){
+      if(ficha) { box.className="auto-fill-status hint"; box.innerHTML=`✓ Encontrado: <strong>${escapeHtml(ficha.nombreComun)}</strong>. Pulsa “Completar datos” para llenar la ficha.`; }
+      else if($("nombreComun").value.trim()) { box.className="auto-fill-status"; box.textContent="Puedes buscar una especie del catálogo interno o escribir una nueva."; }
+      else { box.className="auto-fill-status"; box.textContent=""; }
+    }
+  });
   $("nombreCientifico").addEventListener("input",validarForm);
+  $("autoFillBtn").addEventListener("click",intentarCompletarFicha);
   validarForm();
 }
 function closeModal(){
@@ -579,7 +637,11 @@ function formHtml(f){
     </label>
     ${f.foto?`<button type="button" class="remove-photo-btn" id="removeFotoBtn">Quitar foto</button>`:""}
   </div>
-  <div class="field"><div class="field-label">Nombre común *</div><input id="nombreComun" value="${escapeHtml(f.nombreComun)}" placeholder="Ej. Pez ángel"></div>
+  <div class="field"><div class="field-label">Nombre común *</div>
+    <input id="nombreComun" list="pecesSugeridos" value="${escapeHtml(f.nombreComun)}" placeholder="Ej. Betta, Guppy, Pez ángel" autocomplete="off">
+    <datalist id="pecesSugeridos">${FICHAS_BASE.map(x=>`<option value="${escapeHtml(x.nombreComun)}">`).join("")}</datalist>
+    <div class="auto-fill-tools"><button type="button" id="autoFillBtn" class="auto-fill-btn">✨ Completar datos</button><div id="autoFillStatus" class="auto-fill-status"></div></div>
+  </div>
   <div class="field"><div class="field-label">Nombre científico *</div><input id="nombreCientifico" value="${escapeHtml(f.nombreCientifico)}" placeholder="Ej. Pterophyllum scalare"></div>
   <div class="field"><div class="field-label">Familia</div><input id="familia" value="${escapeHtml(f.familia)}" placeholder="Ej. Cichlidae"></div>
   <div class="row-2"><div class="field"><div class="field-label">Zona de nado</div><select id="zona">${sel(ZONAS,f.zona)}</select></div>
