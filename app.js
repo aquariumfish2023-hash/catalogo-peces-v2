@@ -478,6 +478,21 @@ function rangeValue(a,b,suffix=""){
 function infoCard(icon,title,value,accent=""){
   return `<div class="info-card ${accent}"><div class="info-icon">${icon}</div><div><div class="info-title">${title}</div><div class="info-value">${value}</div></div></div>`;
 }
+function generarConsejo(p){
+  const nombre=p.nombreComun||"esta especie";
+  const grupo=Number(p.cardumenMin||0);
+  const litros=Number(p.acuarioMinL||0);
+  const tempMin=p.tempMinC!=null?Number(p.tempMinC):null;
+  const tempMax=p.tempMaxC!=null?Number(p.tempMaxC):null;
+  const phMin=p.phMin!=null?Number(p.phMin):null;
+  const phMax=p.phMax!=null?Number(p.phMax):null;
+  if(grupo>1) return `Para ${nombre}, procura mantener un grupo de al menos ${grupo} ejemplares y dejar espacio suficiente para su nado y comportamiento natural.`;
+  if(litros>0) return `Para ${nombre}, prepara un acuario de al menos ${litros} litros y mantén una rutina estable de cambios de agua y limpieza.`;
+  if(tempMin!==null&&tempMax!==null) return `Para ${nombre}, mantén el agua estable entre ${tempMin} y ${tempMax} °C y evita cambios bruscos de temperatura.`;
+  if(phMin!==null&&phMax!==null) return `Para ${nombre}, procura mantener el pH entre ${phMin} y ${phMax} y realiza los cambios de agua de forma gradual.`;
+  if(p.compatibilidad) return `Antes de incorporarlo, revisa la compatibilidad con los habitantes actuales y evita combinar especies con necesidades o comportamientos muy diferentes.`;
+  return `Antes de incorporarlo, revisa que el acuario tenga condiciones de agua, espacio y compañeros adecuados para ${nombre}.`;
+}
 function detailModalHtml(p){
   const zona=ZONAS[p.zona]||ZONAS.media;
   const cuidado=CUIDADOS[p.cuidado]||CUIDADOS.facil;
@@ -516,6 +531,10 @@ function detailModalHtml(p){
     </div>
     <div class="detail-bottom">
       <div class="detail-note"><strong>Variedades comunes</strong><div>${vars.length?vars.map(v=>`<span>${escapeHtml(v)}</span>`).join(""):"No registradas"}</div></div>
+    </div>
+    <div class="mi-acuario-advice">
+      <div class="advice-icon">💡</div>
+      <div><div class="advice-title">Consejo Mi Acuario</div><div class="advice-text">${escapeHtml(generarConsejo(p))}</div></div>
     </div>
     <div class="detail-actions-bar">
       <button class="detail-action print" data-detail-print="${p.id}">🖨 Imprimir ficha</button>
