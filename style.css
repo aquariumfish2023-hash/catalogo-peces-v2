@@ -140,3 +140,22 @@ body.modal-open{overflow:hidden}
 .advanced-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.filter-field{display:block}.filter-field>span{display:block;font-size:10.5px;color:#5c7b78;font-weight:700;margin-bottom:5px}.filter-field input,.filter-field select{width:100%;height:38px;padding:8px 9px;border:1px solid #dce6e4;border-radius:8px;background:#fff;color:#0e2a2b;font-size:12.5px;outline:none}.filter-field input:focus,.filter-field select:focus{border-color:#4a90a4}.input-with-unit{position:relative}.input-with-unit input{padding-right:32px}.input-with-unit b{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:10px;color:#8fa3a0}.advanced-help{font-size:10.5px;line-height:1.45;color:#78918d;margin-top:9px}.clear-advanced{margin-top:10px;border:0;background:none;color:#b35b4a;font-size:11px;font-weight:800;padding:0}.clear-advanced:hover{text-decoration:underline}
 @media(max-width:800px){.advanced-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.advanced-grid{grid-template-columns:1fr 1fr}.advanced-filters-panel{padding:11px}.filter-field input,.filter-field select{height:40px}}
+
+
+.mode-hint{display:inline-flex;align-items:center;gap:7px;margin:0 0 12px;padding:7px 11px;border:1px solid #d7e4e1;border-radius:999px;background:#fff;color:#5b7470;font-size:10px;font-weight:800;letter-spacing:.02em;box-shadow:0 2px 8px rgba(14,42,43,.03)}
+.mode-hint::before{content:"";width:7px;height:7px;border-radius:50%;background:#4f9b7a;box-shadow:0 0 0 3px rgba(79,155,122,.12)}
+.hero-row{padding:4px 0 2px}
+.hero-row h1{letter-spacing:-.025em}
+.hero-row p{max-width:650px;line-height:1.55}
+.toolbar{box-shadow:0 4px 18px rgba(14,42,43,.035)}
+.search-bar{min-height:52px}
+.quick-chip{transition:.15s ease}
+.quick-chip:active{transform:translateY(1px)}
+.entry{transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+.entry-head{min-height:108px}
+.entry-name{letter-spacing:-.015em}
+.detail-modal{box-shadow:0 24px 70px rgba(14,42,43,.18)}
+.detail-hero-photo{background:#eef5f4}
+.detail-action{transition:.15s ease}
+.detail-action:hover{transform:translateY(-1px)}
+@media(max-width:520px){.mode-hint{margin-bottom:9px;font-size:9px}.hero-row{padding-top:0}.hero-row p{font-size:12px}.search-bar{min-height:48px}.entry-head{min-height:92px}}

@@ -396,6 +396,7 @@ function renderSearchBadge(filtrados){
 }
 function render(){
   const filtrados=filtradosActuales();
+  if($("toggleView")) $("toggleView").textContent=vistaInterna?"👁 Modo cliente":"🔐 Modo administración";
   $("countRow").textContent=`${filtrados.length} ${filtrados.length===1?"especie":"especies"} mostradas`;
   $("totalCount").textContent=catalogo.length;
   $("familyCount").textContent=new Set(catalogo.map(p=>String(p.familia||"").trim().toLowerCase()).filter(Boolean)).size;
@@ -407,6 +408,8 @@ function render(){
   if($("favoritesToggle")) $("favoritesToggle").textContent=soloFavoritos?"★ Ver todos":"☆ Favoritos";
   renderSearchBadge(filtrados);
   document.querySelectorAll(".internal-only").forEach(el=>el.classList.toggle("hidden",!vistaInterna));
+  const modeHint=$("modeHint");
+  if(modeHint) modeHint.textContent=vistaInterna?"Modo administración":"Modo cliente · solo consulta";
   if(!filtrados.length){
     $("list").innerHTML=`<div class="empty">${catalogo.length?`No encontramos coincidencias para <strong>“${escapeHtml(busqueda)}”</strong>. Prueba con el nombre, una variedad o una familia.`:"Aún no tienes especies en el catálogo. Pulsa “＋ Agregar especie” para comenzar."}</div>`;
     renderSearchSuggestions();
@@ -418,7 +421,7 @@ function render(){
 function entryHtml(p,i){
   const zona=ZONAS[p.zona]||ZONAS.media, cuidado=CUIDADOS[p.cuidado]||CUIDADOS.facil;
   const open=expandido===p.id;
-  const price=`<div class="price">${p.precio!=null&&p.precio!==""?`$${Number(p.precio||0).toLocaleString("es-CO")}`:"Consultar"}</div>`;
+  const price=vistaInterna?`<div class="price">${p.precio!=null&&p.precio!==""?`$${Number(p.precio||0).toLocaleString("es-CO")}`:"Consultar"}</div>`:"";
   return `<article class="entry" style="border-left-color:${zona.color}">
     <div class="entry-head" data-id="${p.id}">
       <div class="thumb">${p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun)}" loading="lazy">`:"🐟"}</div>
@@ -500,7 +503,7 @@ function detailModalHtml(p){
           ${infoCard("▣","Acuario mínimo",p.acuarioMinL!=null?`${escapeHtml(p.acuarioMinL)} litros`:"—")}
           ${infoCard("◉","Grupo mínimo",p.cardumenMin===1?"Solitario":p.cardumenMin!=null?`${escapeHtml(p.cardumenMin)} ejemplares`:"—")}
         </div>
-        ${`<div class="detail-commercial"><div><div class="commercial-label">Precio</div>${price}</div></div>`}
+        ${internal?`<div class="detail-commercial"><div><div class="commercial-label">Precio interno</div>${price}</div></div>`:""}
       </div>
     </div>
     <div class="detail-section-grid">
@@ -821,7 +824,7 @@ document.body.addEventListener("click",e=>{
 });
 $("toggleView").addEventListener("click",()=>{
   vistaInterna=!vistaInterna;
-  $("toggleView").textContent=vistaInterna?"Vista interna":"Vista cliente";
+  $("toggleView").textContent=vistaInterna?"👁 Modo cliente":"🔐 Modo administración";
   render();
 });
 $("fab").addEventListener("click",()=>openModal(null));

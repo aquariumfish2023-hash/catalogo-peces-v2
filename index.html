@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Catálogo de Peces</title>
+<title>Mi Acuario · Catálogo de peces</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#0E2A2B" />
@@ -40,22 +40,23 @@
           <span class="fish-icon">🐟</span>
           <div class="brand-block">
             <input id="storeName" class="store-name" value="Mi Acuario" maxlength="40" aria-label="Nombre del acuario" title="Nombre del acuario" />
-            <div class="store-sub">Catálogo de peces de agua dulce</div>
+            <div class="store-sub">Catálogo profesional · Agua dulce</div>
           </div>
         </div>
         <div class="header-actions">
-          <button id="toggleView" class="toggle-btn">Vista interna</button>
-          <button id="logoutBtn" class="toggle-btn logout-btn">Salir</button>
+          <button id="toggleView" class="toggle-btn" type="button">👁 Modo cliente</button>
+          <button id="logoutBtn" class="toggle-btn logout-btn" type="button">↪ Salir</button>
         </div>
       </div>
     </header>
 
     <main class="main">
+      <div id="modeHint" class="mode-hint">Modo administración</div>
       <section class="hero-row">
         <div>
-          <div class="eyebrow">MI COLECCIÓN</div>
-          <h1>Catálogo de peces</h1>
-          <p>Consulta tus especies de forma rápida y presenta fichas profesionales a tus clientes.</p>
+          <div class="eyebrow">MI ACUARIO · CATÁLOGO PROFESIONAL</div>
+          <h1>Encuentra el pez ideal</h1>
+          <p>Busca, consulta y presenta especies de agua dulce de forma rápida y profesional.</p>
         </div>
         <button id="heroAddBtn" class="hero-add internal-only" type="button">＋ Agregar especie</button>
       </section>
@@ -78,8 +79,8 @@
       <section class="toolbar">
         <div class="search-title-row">
           <div>
-            <div class="search-heading">🔎 Buscar en tu catálogo</div>
-            <div class="search-help">Nombre, especie, familia, variedad, origen o cualquier palabra de la ficha.</div>
+            <div class="search-heading">🔎 Buscar una especie</div>
+            <div class="search-help">Busca por nombre, familia, variedad, origen o cualquier dato de la ficha.</div>
           </div>
           <span id="searchResultBadge" class="search-result-badge hidden"></span>
         </div>
@@ -92,7 +93,7 @@
           <div id="searchSuggestions" class="search-suggestions hidden" role="listbox" aria-label="Sugerencias de búsqueda"></div>
         </div>
         <div class="quick-searches" id="quickSearches">
-          <span>Buscar rápido:</span>
+          <span>Accesos rápidos:</span>
           <button type="button" class="quick-chip" data-search="Betta">Betta</button>
           <button type="button" class="quick-chip" data-search="Guppy">Guppy</button>
           <button type="button" class="quick-chip" data-search="Koi">Koi</button>
