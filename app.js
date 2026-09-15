@@ -386,7 +386,7 @@ function detailModalHtml(p){
   const internal=vistaInterna;
   const price=p.precio!=null&&p.precio!==""?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"<div class=\"price-big\">Consultar</div>";
   const favoriteAction=`<button class="detail-action favorite-detail ${p.favorito?"active":""}" data-detail-favorite="${p.id}">${p.favorito?"★ Quitar de favoritos":"☆ Agregar a favoritos"}</button>`;
-  const actions=internal?`${favoriteAction}<button class="detail-action edit" data-detail-edit="${p.id}">✎ Editar</button><button class="detail-action danger" data-detail-delete="${p.id}">🗑 Eliminar</button>`:favoriteAction;
+  const actions=internal?`${favoriteAction}<button class="detail-action duplicate" data-detail-duplicate="${p.id}">📋 Duplicar ficha</button><button class="detail-action edit" data-detail-edit="${p.id}">✎ Editar</button><button class="detail-action danger" data-detail-delete="${p.id}">🗑 Eliminar</button>`:favoriteAction;
   const vars=String(p.variedades||"").split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);
   return `<div class="detail-hero">
       <div class="detail-gallery"><div class="detail-main-photo">${photo}</div>${vars.length?`<div class="detail-variety-row">${vars.map(v=>`<span>${escapeHtml(v)}</span>`).join("")}</div>`:""}${thumbs?`<div class="detail-thumbs">${thumbs}</div>`:""}</div>
@@ -611,6 +611,7 @@ document.body.addEventListener("click",e=>{
   const wa=e.target.closest("[data-whatsapp-share]"); if(wa){const p=catalogo.find(x=>x.id===wa.dataset.whatsappShare);if(p)shareWhatsAppPez(p);return;}
   const print=e.target.closest("[data-detail-print]"); if(print){const p=catalogo.find(x=>x.id===print.dataset.detailPrint);if(p)printPez(p);return;}
   const fav=e.target.closest("[data-detail-favorite]"); if(fav){toggleFavorito(fav.dataset.detailFavorite);return;}
+  const duplicate=e.target.closest("[data-detail-duplicate]"); if(duplicate){const p=catalogo.find(x=>x.id===duplicate.dataset.detailDuplicate);if(p)duplicarPez(p);return;}
   const edit=e.target.closest("[data-detail-edit]"); if(edit){const p=catalogo.find(x=>x.id===edit.dataset.detailEdit);closeDetailModal();openModal(p);return;}
   const del=e.target.closest("[data-detail-delete]"); if(del){closeDetailModal();eliminarPez(del.dataset.detailDelete);return;}
 });
@@ -718,10 +719,22 @@ const CAMPOS_VACIOS={
   tamanoCm:"",phMin:"",phMax:"",tempMinC:"",tempMaxC:"",acuarioMinL:"",cardumenMin:"",
   alimentacion:"",compatibilidad:"",reproduccion:"oviparo",longevidadAnios:"",origen:"",variedades:"",precio:"",notas:"",foto:null
 };
-function openModal(pez){
-  editando=pez||null;fotoTemp=pez?pez.foto||null:null;
-  $("modalTitle").textContent=pez?"Editar especie":"Agregar especie";
-  $("modalBody").innerHTML=formHtml(pez||CAMPOS_VACIOS);
+function duplicarPez(pez){
+  if(!pez||!usuarioActual)return;
+  const copia={...pez};
+  delete copia.id;
+  delete copia.ownerUid;
+  copia.nombreComun=`${pez.nombreComun||""} (copia)`;
+  copia.favorito=false;
+  closeDetailModal();
+  openModal(copia,"duplicar");
+}
+function openModal(pez, modo="editar"){
+  editando=modo==="duplicar"?null:(pez||null);
+  fotoTemp=pez?pez.foto||null:null;
+  const formulario=modo==="duplicar"&&pez?{...pez,id:undefined,favorito:false}:(pez||CAMPOS_VACIOS);
+  $("modalTitle").textContent=modo==="duplicar"?"Duplicar especie":(pez?"Editar especie":"Agregar especie");
+  $("modalBody").innerHTML=formHtml(formulario);
   $("modalOverlay").classList.remove("hidden");
   $("fotoInput").addEventListener("change",handleFotoChange);
   $("nombreComun").addEventListener("input",()=>{
@@ -837,7 +850,9 @@ $("saveBtn").addEventListener("click",async()=>{
     precio:num("precio"),notas:$("notas").value.trim()
   };
   const error=validarDatos(datos);if(error){banner(error,"error");return}
-  const eraEdicion=Boolean(editando);guardando=true;$("saveBtn").disabled=true;$("saveBtn").textContent=eraEdicion?"Actualizando…":"Guardando…";
+  const eraEdicion=Boolean(editando);
+  const eraDuplicado=$("modalTitle").textContent==="Duplicar especie";
+  guardando=true;$("saveBtn").disabled=true;$("saveBtn").textContent=eraEdicion?"Actualizando…":eraDuplicado?"Duplicando…":"Guardando…";
   try{
     if(!usuarioActual)throw new Error("No hay usuario autenticado");
     if(!editando){
@@ -846,7 +861,7 @@ $("saveBtn").addEventListener("click",async()=>{
       await updateDoc(doc(db,"peces",editando.id),{...datos,foto:fotoTemp||null});
     }
     closeModal();
-    banner(eraEdicion?"Especie actualizada correctamente.":"Especie guardada correctamente.","success");
+    banner(eraEdicion?"Especie actualizada correctamente.":eraDuplicado?"Ficha duplicada correctamente. Ahora puedes ajustar los datos y guardar los cambios.":"Especie guardada correctamente.","success");
   }catch(err){
     console.error(err);
     banner("No se pudo guardar. Revisa la conexión, las reglas de Firestore o el tamaño de la foto.","error");
