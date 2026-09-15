@@ -396,38 +396,67 @@ function renderSearchBadge(filtrados){
 }
 function renderAsistente(){
   try {
-  const liters=Number($("assistantLiters")?.value||0);
-  const temp=Number($("assistantTemp")?.value||0);
-  const ph=Number($("assistantPh")?.value||0);
-  const existing=normalizarTexto($("assistantExisting")?.value||"");
-  const has=Number.isFinite(liters)&&liters>0 || Number.isFinite(temp)&&temp>0 || Number.isFinite(ph)&&ph>0 || existing;
-  const msg=$("assistantMessage"), box=$("assistantResults"); if(!msg||!box)return;
-  if(!has){msg.textContent="Completa al menos un dato para consultar. Si indicas litros, temperatura y pH, la consulta será más precisa."; box.innerHTML="";return;}
-  const tokens=tokensBusqueda(existing);
-  const compatibles=[], parciales=[];
-  catalogo.forEach(p=>{
-    const checks=[];
-    if(liters) checks.push(Number(p.acuarioMinL||0)<=liters);
-    if(temp) checks.push(Number(p.tempMinC)<=temp && Number(p.tempMaxC)>=temp);
-    if(ph) checks.push(Number(p.phMin)<=ph && Number(p.phMax)>=ph);
-    if(tokens.length){
-      const txt=textoBusquedaPez(p);
-      const mencionaActual=tokens.some(t=>txt.includes(t));
-      checks.push(!mencionaActual);
+    const liters=Number($("assistantLiters")?.value||0);
+    const temp=Number($("assistantTemp")?.value||0);
+    const ph=Number($("assistantPh")?.value||0);
+    const existing=normalizarTexto($("assistantExisting")?.value||"");
+    const has=(Number.isFinite(liters)&&liters>0)||(Number.isFinite(temp)&&temp>0)||(Number.isFinite(ph)&&ph>0)||!!existing;
+    const msg=$("assistantMessage"), box=$("assistantResults");
+    if(!msg||!box)return;
+    if(!has){
+      msg.textContent="Completa al menos un dato para consultar. Si indicas litros, temperatura y pH, la consulta será más precisa.";
+      box.innerHTML="";
+      return;
     }
-    const passed=checks.filter(Boolean).length;
-    const total=checks.length;
-    if(total&&passed===total) compatibles.push(p);
-    else if(total&&passed>=Math.max(1,total-1)) parciales.push({p,passed,total});
-  });
-  msg.textContent=`${compatibles.length} especie${compatibles.length===1?"":"s"} cumple${compatibles.length===1?"":"n"} todos los datos indicados.`;
-  const card=p=>`<button type="button" class="assistant-card" data-assistant-id="${p.id}"><div class="assistant-thumb">${p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun)}" loading="lazy">`:"🐟"}</div><div><strong>${escapeHtml(p.nombreComun)}</strong><em>${escapeHtml(p.nombreCientifico||"")}</em><span>${escapeHtml(rangeValue(p.tempMinC,p.tempMaxC," °C"))} · pH ${escapeHtml(rangeValue(p.phMin,p.phMax))} · ${escapeHtml(p.acuarioMinL||"—")} L mín.</span></div></button>`;
-  let out=compatibles.length?`<div class="assistant-result-title">Coinciden con los datos indicados</div><div class="assistant-card-grid">${compatibles.map(card).join("")}</div>`:"<div class="assistant-no-result">No hay especies que cumplan todos los datos indicados.</div>";
-  if(parciales.length){out+=`<details class="assistant-partial"><summary>Ver ${parciales.length} coincidencia${parciales.length===1?"":"s"} parcial${parciales.length===1?"":"es"}</summary><div class="assistant-card-grid">${parciales.map(x=>card(x.p)).join("")}</div></details>`;}
-  out+=`<div class="assistant-disclaimer">💡 Esta consulta compara los datos registrados en tu catálogo. Antes de mezclar especies, revisa también comportamiento, tamaño adulto, grupo mínimo y las condiciones reales del acuario.</div>`;
-  box.innerHTML=out;
-  } catch (err) {
-    console.error("ASISTENTE", err);
+    const tokens=tokensBusqueda(existing);
+    const compatibles=[], parciales=[];
+    catalogo.forEach(function(p){
+      const checks=[];
+      if(liters) checks.push(Number(p.acuarioMinL||0)<=liters);
+      if(temp) checks.push(Number(p.tempMinC)<=temp && Number(p.tempMaxC)>=temp);
+      if(ph) checks.push(Number(p.phMin)<=ph && Number(p.phMax)>=ph);
+      if(tokens.length){
+        const txt=textoBusquedaPez(p);
+        const mencionaActual=tokens.some(function(t){return txt.includes(t);});
+        checks.push(!mencionaActual);
+      }
+      const passed=checks.filter(Boolean).length;
+      const total=checks.length;
+      if(total&&passed===total) compatibles.push(p);
+      else if(total&&passed>=Math.max(1,total-1)) parciales.push({p:p,passed:passed,total:total});
+    });
+    msg.textContent=compatibles.length+" especie"+(compatibles.length===1?"":"s")+" cumple"+(compatibles.length===1?"":"n")+" todos los datos indicados.";
+
+    function card(p){
+      const photo=p.foto
+        ? '<img src="'+escapeHtml(p.foto)+'" alt="'+escapeHtml(p.nombreComun)+'" loading="lazy">'
+        : '🐟';
+      const name=escapeHtml(p.nombreComun);
+      const scientific=escapeHtml(p.nombreCientifico||"");
+      const conditions=escapeHtml(rangeValue(p.tempMinC,p.tempMaxC," °C"))+
+        ' · pH '+escapeHtml(rangeValue(p.phMin,p.phMax))+
+        ' · '+escapeHtml(p.acuarioMinL||"—")+' L mín.';
+      return '<button type="button" class="assistant-card" data-assistant-id="'+escapeHtml(p.id)+'">'+
+        '<div class="assistant-thumb">'+photo+'</div>'+\
+        '<div><strong>'+name+'</strong><em>'+scientific+'</em><span>'+conditions+'</span></div>'+\
+        '</button>';
+    }
+
+    let out="";
+    if(compatibles.length){
+      out+='<div class="assistant-result-title">Coinciden con los datos indicados</div>';
+      out+='<div class="assistant-card-grid">'+compatibles.map(card).join("")+'</div>';
+    }else{
+      out+='<div class="assistant-no-result">No hay especies que cumplan todos los datos indicados.</div>';
+    }
+    if(parciales.length){
+      out+='<details class="assistant-partial"><summary>Ver '+parciales.length+' coincidencia'+(parciales.length===1?"":"s")+' parcial'+(parciales.length===1?"":"es")+'</summary>';
+      out+='<div class="assistant-card-grid">'+parciales.map(function(x){return card(x.p);}).join("")+'</div></details>';
+    }
+    out+='<div class="assistant-disclaimer">💡 Esta consulta compara los datos registrados en tu catálogo. Antes de mezclar especies, revisa también comportamiento, tamaño adulto, grupo mínimo y las condiciones reales del acuario.</div>';
+    box.innerHTML=out;
+  } catch(err){
+    console.error("ASISTENTE",err);
   }
 }
 
