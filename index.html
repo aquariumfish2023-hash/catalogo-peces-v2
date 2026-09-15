@@ -118,6 +118,24 @@
         </div>
       </section>
 
+      <section class="aquarium-assistant" id="aquariumAssistant">
+        <div class="assistant-head">
+          <div><div class="assistant-eyebrow">MI ACUARIO · ASISTENTE</div><h2>🧪 Encuentra peces para tu acuario</h2><p>Introduce las condiciones de tu acuario y consulta qué especies de tu catálogo encajan con esos parámetros.</p></div>
+          <button id="assistantToggle" class="assistant-toggle" type="button" aria-expanded="true">Ocultar</button>
+        </div>
+        <div id="assistantBody" class="assistant-body">
+          <div class="assistant-grid">
+            <label class="assistant-field"><span>Volumen disponible</span><div class="input-with-unit"><input id="assistantLiters" type="number" min="1" step="10" placeholder="Ej. 100"><b>L</b></div></label>
+            <label class="assistant-field"><span>Temperatura</span><div class="input-with-unit"><input id="assistantTemp" type="number" min="0" max="50" step="0.5" placeholder="Ej. 26"><b>°C</b></div></label>
+            <label class="assistant-field"><span>pH</span><div class="input-with-unit"><input id="assistantPh" type="number" min="0" max="14" step="0.1" placeholder="Ej. 7"><b>pH</b></div></label>
+            <label class="assistant-field"><span>Peces que ya tienes <small>(opcional)</small></span><input id="assistantExisting" type="text" placeholder="Ej. Guppy, Corydora"></label>
+          </div>
+          <div class="assistant-actions"><button id="assistantSearch" class="assistant-search" type="button">🔎 Consultar catálogo</button><button id="assistantClear" class="assistant-clear" type="button">Limpiar</button></div>
+          <div id="assistantMessage" class="assistant-message">Completa al menos un dato para consultar. Si indicas litros, temperatura y pH, la consulta será más precisa.</div>
+          <div id="assistantResults" class="assistant-results"></div>
+        </div>
+      </section>
+
       <div id="statusBanner"></div>
 
       <section class="results-head">

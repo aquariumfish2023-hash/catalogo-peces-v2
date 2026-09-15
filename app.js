@@ -394,6 +394,39 @@ function renderSearchBadge(filtrados){
   badge.classList.remove("hidden");
   badge.textContent=`${filtrados.length} ${filtrados.length===1?"resultado":"resultados"}`;
 }
+function renderAsistente(){
+  const liters=Number($("assistantLiters")?.value||0);
+  const temp=Number($("assistantTemp")?.value||0);
+  const ph=Number($("assistantPh")?.value||0);
+  const existing=normalizarTexto($("assistantExisting")?.value||"");
+  const has=Number.isFinite(liters)&&liters>0 || Number.isFinite(temp)&&temp>0 || Number.isFinite(ph)&&ph>0 || existing;
+  const msg=$("assistantMessage"), box=$("assistantResults"); if(!msg||!box)return;
+  if(!has){msg.textContent="Completa al menos un dato para consultar. Si indicas litros, temperatura y pH, la consulta será más precisa."; box.innerHTML="";return;}
+  const tokens=tokensBusqueda(existing);
+  const compatibles=[], parciales=[];
+  catalogo.forEach(p=>{
+    const checks=[];
+    if(liters) checks.push(Number(p.acuarioMinL||0)<=liters);
+    if(temp) checks.push(Number(p.tempMinC)<=temp && Number(p.tempMaxC)>=temp);
+    if(ph) checks.push(Number(p.phMin)<=ph && Number(p.phMax)>=ph);
+    if(tokens.length){
+      const txt=textoBusquedaPez(p);
+      const mencionaActual=tokens.some(t=>txt.includes(t));
+      checks.push(!mencionaActual);
+    }
+    const passed=checks.filter(Boolean).length;
+    const total=checks.length;
+    if(total&&passed===total) compatibles.push(p);
+    else if(total&&passed>=Math.max(1,total-1)) parciales.push({p,passed,total});
+  });
+  msg.textContent=`${compatibles.length} especie${compatibles.length===1?"":"s"} cumple${compatibles.length===1?"":"n"} todos los datos indicados.`;
+  const card=p=>`<button type="button" class="assistant-card" data-assistant-id="${p.id}"><div class="assistant-thumb">${p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun)}" loading="lazy">`:"🐟"}</div><div><strong>${escapeHtml(p.nombreComun)}</strong><em>${escapeHtml(p.nombreCientifico||"")}</em><span>${escapeHtml(rangeValue(p.tempMinC,p.tempMaxC," °C"))} · pH ${escapeHtml(rangeValue(p.phMin,p.phMax))} · ${escapeHtml(p.acuarioMinL||"—")} L mín.</span></div></button>`;
+  let out=compatibles.length?`<div class="assistant-result-title">Coinciden con los datos indicados</div><div class="assistant-card-grid">${compatibles.map(card).join("")}</div>`:"<div class="assistant-no-result">No hay especies que cumplan todos los datos indicados.</div>";
+  if(parciales.length){out+=`<details class="assistant-partial"><summary>Ver ${parciales.length} coincidencia${parciales.length===1?"":"s"} parcial${parciales.length===1?"":"es"}</summary><div class="assistant-card-grid">${parciales.map(x=>card(x.p)).join("")}</div></details>`;}
+  out+=`<div class="assistant-disclaimer">💡 Esta consulta compara los datos registrados en tu catálogo. Antes de mezclar especies, revisa también comportamiento, tamaño adulto, grupo mínimo y las condiciones reales del acuario.</div>`;
+  box.innerHTML=out;
+}
+
 function render(){
   const filtrados=filtradosActuales();
   if($("toggleView")) $("toggleView").textContent=vistaInterna?"👁 Modo cliente":"🔐 Modo administración";
@@ -417,6 +450,7 @@ function render(){
   }
   $("list").innerHTML=filtrados.map((p,i)=>entryHtml(p,i)).join("");
   renderSearchSuggestions();
+  renderAsistente();
 }
 function entryHtml(p,i){
   const zona=ZONAS[p.zona]||ZONAS.media, cuidado=CUIDADOS[p.cuidado]||CUIDADOS.facil;
@@ -765,6 +799,10 @@ function seleccionarSugerencia(id){
   $("searchSuggestions")?.classList.add("hidden");
   $("searchInput")?.focus();
 }
+$("assistantSearch")?.addEventListener("click",renderAsistente);
+$("assistantClear")?.addEventListener("click",()=>{["assistantLiters","assistantTemp","assistantPh","assistantExisting"].forEach(id=>{const el=$(id);if(el)el.value=""});renderAsistente();});
+$("assistantToggle")?.addEventListener("click",()=>{const body=$("assistantBody"),btn=$("assistantToggle");if(!body||!btn)return;const hidden=body.classList.toggle("hidden");btn.textContent=hidden?"Mostrar":"Ocultar";btn.setAttribute("aria-expanded",String(!hidden));});
+document.body.addEventListener("click",e=>{const btn=e.target.closest("[data-assistant-id]");if(btn){const p=catalogo.find(x=>x.id===btn.dataset.assistantId);if(p){expandido=p.id;document.querySelector(`[data-id="${CSS.escape(p.id)}"]`)?.scrollIntoView({behavior:"smooth",block:"center"});render();}}});
 $("searchInput").addEventListener("input",e=>{busqueda=e.target.value.trim();suggestionIndex=-1;render()});
 $("searchInput").addEventListener("keydown",e=>{
   const box=$("searchSuggestions");
