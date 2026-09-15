@@ -1,8 +1,8 @@
 {
   "name": "Catálogo de Peces",
   "short_name": "Catálogo Peces",
-  "start_url": "./",
-  "id": "./",
+  "start_url": "./index.html",
+  "id": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#F2F6F5",
