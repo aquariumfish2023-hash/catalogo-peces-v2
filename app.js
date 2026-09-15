@@ -120,6 +120,68 @@ const FICHAS_BASE = [
   {nombreComun:"Escalar koi", nombreCientifico:"Pterophyllum scalare", familia:"Cichlidae", zona:"media", temperamento:"pacifico", cuidado:"medio", tamanoCm:15, phMin:6, phMax:7.5, tempMinC:24, tempMaxC:30, acuarioMinL:150, cardumenMin:5, alimentacion:"Pellets, escamas y alimentos congelados variados.", compatibilidad:"Comunitario con peces compatibles; puede depredar peces muy pequeños.", origen:"Cuenca del Amazonas", variedades:"Koi", reproduccion:"oviparo", longevidadAnios:10, notas:"Variedad de color del pez ángel; requiere un acuario alto."}
 ];
 
+const FICHAS_ADICIONALES = [
+  ["Endler","Poecilia wingei","Poeciliidae","superficie","pacifico","facil",3.5,7,8.5,23,28,30,6,"Venezuela","Japan Blue, Black Bar, Tiger"],
+  ["Espada","Xiphophorus hellerii","Poeciliidae","media","pacifico","facil",12,7,8.3,22,28,100,4,"México y América Central","Red, Kohaku, Pineapple"],
+  ["Tetra ember","Hyphessobrycon amandae","Characidae","media","pacifico","facil",2.5,5.5,7.5,23,28,40,8,"Brasil","Ember"],
+  ["Tetra nariz de borracho","Hemigrammus rhodostomus","Characidae","media","pacifico","medio",5,5.5,7,24,28,80,8,"Brasil y Amazonia","Rummy Nose"],
+  ["Tetra limón","Hyphessobrycon pulchripinnis","Characidae","media","pacifico","facil",5,5.5,7.5,23,28,60,8,"Brasil","Lemon"],
+  ["Tetra negro","Gymnocorymbus ternetzi","Characidae","media","pacifico","facil",6,6,7.5,22,28,60,6,"Brasil, Bolivia y Paraguay","Black Skirt, White Skirt"],
+  ["Tetra serpae","Hyphessobrycon eques","Characidae","media","semi-agresivo","facil",5,5.5,7.5,23,28,60,8,"Sudamérica","Serpae, Longfin"],
+  ["Rasbora arlequín","Trigonostigma heteromorpha","Danionidae","media","pacifico","facil",5,6,7.5,23,28,60,8,"Tailandia, Malasia e Indonesia","Harlequin"],
+  ["Rasbora chili","Boraras brigittae","Danionidae","media","pacifico","medio",2,4.5,7,23,28,30,10,"Indonesia","Chili"],
+  ["Danio cebra","Danio rerio","Danionidae","media","pacifico","facil",5,6.5,8,20,26,60,8,"India, Pakistán y Bangladesh","Longfin, Leopard"],
+  ["Danio perla celestial","Danio margaritatus","Danionidae","media","pacifico","medio",2.5,6.5,7.5,22,26,40,8,"Myanmar y Tailandia","Celestial Pearl"],
+  ["Barbo cereza","Puntius titteya","Cyprinidae","media","pacifico","facil",5,6,8,22,27,60,6,"Sri Lanka","Red, Longfin"],
+  ["Barbo tigre","Puntigrus tetrazona","Cyprinidae","media","semi-agresivo","medio",7,6,7.5,23,28,100,8,"Indonesia y Malasia","Tiger, Green, Albino"],
+  ["Pez arcoíris de Boesemani","Melanotaenia boesemani","Melanotaeniidae","media","pacifico","medio",12,7,8.2,24,28,150,6,"Papúa Occidental","Boesemani"],
+  ["Pez arcoíris neón","Melanotaenia praecox","Melanotaeniidae","media","pacifico","medio",7,6.5,8,23,28,100,6,"Nueva Guinea","Neon Dwarf"],
+  ["Pez arcoíris rojo","Glossolepis incisus","Melanotaeniidae","media","pacifico","medio",15,7,8.2,24,28,150,6,"Nueva Guinea","Red Rainbowfish"],
+  ["Pez arcoíris turquesa","Melanotaenia lacustris","Melanotaeniidae","media","pacifico","medio",12,7,8,23,28,120,6,"Papúa Nueva Guinea","Turquoise"],
+  ["Killifish payaso","Epiplatys annulatus","Nothobranchiidae","superficie","pacifico","medio",4,5.5,7.5,22,26,40,6,"África occidental","Clown Killifish"],
+  ["Pez hacha mármol","Carnegiella strigata","Gasteropelecidae","superficie","pacifico","medio",4.5,5.5,7.5,23,28,80,8,"Sudamérica","Marble Hatchetfish"],
+  ["Corydora panda","Corydoras panda","Callichthyidae","fondo","pacifico","facil",5,6,7.5,20,25,60,6,"Perú","Panda"],
+  ["Corydora sterbai","Corydoras sterbai","Callichthyidae","fondo","pacifico","facil",6.5,6,7.5,24,28,80,6,"Brasil y Bolivia","Sterbai"],
+  ["Corydora albina","Corydoras aeneus","Callichthyidae","fondo","pacifico","facil",6.5,6,7.8,22,27,60,6,"Sudamérica","Albino"],
+  ["Otocinclus","Otocinclus spp.","Loricariidae","fondo","pacifico","medio",4,6,7.5,22,26,60,6,"Sudamérica","Common Otocinclus"],
+  ["Pleco común","Pterygoplichthys pardalis","Loricariidae","fondo","pacifico","medio",35,6,7.8,23,28,400,1,"Sudamérica","Leopard Pleco"],
+  ["Locha kuhli","Pangio kuhlii","Cobitidae","fondo","pacifico","facil",10,5.5,7.5,24,28,60,6,"Sudeste Asiático","Kuhli"],
+  ["Locha payaso","Chromobotia macracanthus","Botiidae","fondo","pacifico","medio",30,6,7.5,25,30,300,5,"Indonesia","Clown Loach"],
+  ["Gourami miel","Trichogaster chuna","Osphronemidae","superficie","pacifico","facil",5,6,7.5,23,28,40,1,"India y Bangladesh","Honey, Sunset"],
+  ["Gourami perla","Trichopodus leerii","Osphronemidae","superficie","pacifico","medio",12,6,7.5,24,30,120,3,"Sudeste Asiático","Pearl"],
+  ["Gourami azul","Trichopodus trichopterus","Osphronemidae","superficie","semi-agresivo","facil",15,6,8,23,28,120,1,"Sudeste Asiático","Blue, Opaline, Gold"],
+  ["Apistogramma cacatuoides","Apistogramma cacatuoides","Cichlidae","fondo","semi-agresivo","medio",9,6,7.5,24,28,80,2,"Perú y Amazonia","Orange Flash, Double Red"],
+  ["Ramirezi boliviano","Mikrogeophagus altispinosus","Cichlidae","fondo","pacifico","medio",8,6,7.8,23,28,100,4,"Bolivia y Brasil","Bolivian Ram"],
+  ["Cíclido convicto","Amatitlania nigrofasciata","Cichlidae","media","agresivo","medio",15,6.5,8,23,28,150,2,"América Central","Black Convict, Marble"],
+  ["Óscar","Astronotus ocellatus","Cichlidae","media","semi-agresivo","medio",35,6,8,23,28,400,1,"Cuenca amazónica","Tiger, Albino, Red"],
+  ["Severum","Heros efasciatus","Cichlidae","media","semi-agresivo","medio",20,6,7.5,24,29,250,1,"Sudamérica","Gold, Green, Red Spotted"],
+  ["Cíclido joya","Hemichromis bimaculatus","Cichlidae","media","agresivo","medio",15,6,7.8,23,28,150,2,"África occidental","Red Jewel"],
+  ["Pez cuchillo fantasma","Apteronotus albifrons","Apteronotidae","fondo","semi-agresivo","dificil",45,6,7.5,23,28,500,1,"Sudamérica","Black Ghost"],
+  ["Pez elefante","Gnathonemus petersii","Mormyridae","fondo","pacifico","dificil",25,6.5,7.5,23,28,200,4,"África occidental y central","Elephantnose"],
+  ["Arowana plateada","Osteoglossum bicirrhosum","Osteoglossidae","superficie","semi-agresivo","dificil",90,6,7.5,24,30,1000,1,"Amazonia","Silver Arowana"],
+  ["Pez cuchillo payaso","Chitala ornata","Notopteridae","fondo","semi-agresivo","dificil",60,6,8,24,28,800,1,"Sudeste Asiático","Clown Knifefish"],
+  ["Pez globo enano","Carinotetraodon travancoricus","Tetraodontidae","media","semi-agresivo","medio",3.5,7,8,24,28,40,3,"India","Dwarf Puffer"],
+  ["Pez mariposa africano","Pantodon buchholzi","Pantodontidae","superficie","semi-agresivo","medio",12,6,7.5,24,28,100,1,"África occidental","African Butterfly Fish"],
+  ["Pez lápiz enano","Nannostomus marginatus","Lebiasinidae","superficie","pacifico","medio",3.5,5,7,23,28,40,8,"Sudamérica","Dwarf Pencilfish"],
+  ["Tetra emperador","Nematobrycon palmeri","Characidae","media","pacifico","facil",5,5.5,7.5,23,28,60,6,"Colombia","Emperor Tetra"],
+  ["Tetra diamante","Moenkhausia pittieri","Characidae","media","pacifico","facil",6,5.5,7.5,23,28,80,6,"Venezuela","Diamond Tetra"],
+  ["Tetra Buenos Aires","Hyphessobrycon anisitsi","Characidae","media","semi-agresivo","facil",7,6,8,18,28,100,6,"Argentina, Brasil y Paraguay","Buenos Aires Tetra"],
+  ["Tetra glowlight","Hemigrammus erythrozonus","Characidae","media","pacifico","facil",4,5.5,7.5,23,28,50,8,"Guyana","Glowlight"],
+  ["Cíclido amarillo eléctrico","Labidochromis caeruleus","Cichlidae","media","semi-agresivo","medio",10,7.5,8.6,24,28,200,4,"Lago Malawi","Electric Yellow"],
+  ["Pavo real de Malawi","Aulonocara spp.","Cichlidae","media","semi-agresivo","medio",13,7.5,8.6,24,28,250,4,"Lago Malawi","Peacock, Red, Blue"],
+  ["Camarón cereza","Neocaridina davidi","Atyidae","fondo","pacifico","facil",3,6.5,8,20,27,20,6,"Asia oriental","Red Cherry, Blue Dream, Yellow"],
+  ["Camarón Amano","Caridina multidentata","Atyidae","fondo","pacifico","facil",5,6.5,8,20,27,30,4,"Japón y Taiwán","Amano"]
+];
+
+const FICHAS_ADICIONALES_OBJ = FICHAS_ADICIONALES.map(([nombreComun,nombreCientifico,familia,zona,temperamento,cuidado,tamanoCm,phMin,phMax,tempMinC,tempMaxC,acuarioMinL,cardumenMin,origen,variedades]) => ({
+  nombreComun,nombreCientifico,familia,zona,temperamento,cuidado,tamanoCm,phMin,phMax,tempMinC,tempMaxC,acuarioMinL,cardumenMin,origen,variedades,
+  alimentacion:"Pellets o escamas de calidad y alimentos congelados o vivos según la especie.",
+  compatibilidad:"Verificar siempre coincidencia de temperatura, pH, tamaño y temperamento antes de mezclar.",
+  reproduccion:"oviparo", longevidadAnios:5,
+  notas:"Ficha base orientativa; ajustar los valores a la variedad y a las condiciones reales del acuario."
+}));
+FICHAS_BASE.push(...FICHAS_ADICIONALES_OBJ);
+
 function buscarFichaBase(nombre){
   const n=normalizarTexto(nombre);
   if(!n)return null;
