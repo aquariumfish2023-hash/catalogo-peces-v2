@@ -454,7 +454,6 @@ function render(){
   }
   $("list").innerHTML=filtrados.map((p,i)=>entryHtml(p,i)).join("");
   renderSearchSuggestions();
-  renderAsistente();
 }
 function entryHtml(p,i){
   const zona=ZONAS[p.zona]||ZONAS.media, cuidado=CUIDADOS[p.cuidado]||CUIDADOS.facil;
