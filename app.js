@@ -395,6 +395,7 @@ function renderSearchBadge(filtrados){
   badge.textContent=`${filtrados.length} ${filtrados.length===1?"resultado":"resultados"}`;
 }
 function renderAsistente(){
+  try {
   const liters=Number($("assistantLiters")?.value||0);
   const temp=Number($("assistantTemp")?.value||0);
   const ph=Number($("assistantPh")?.value||0);
@@ -425,6 +426,9 @@ function renderAsistente(){
   if(parciales.length){out+=`<details class="assistant-partial"><summary>Ver ${parciales.length} coincidencia${parciales.length===1?"":"s"} parcial${parciales.length===1?"":"es"}</summary><div class="assistant-card-grid">${parciales.map(x=>card(x.p)).join("")}</div></details>`;}
   out+=`<div class="assistant-disclaimer">💡 Esta consulta compara los datos registrados en tu catálogo. Antes de mezclar especies, revisa también comportamiento, tamaño adulto, grupo mínimo y las condiciones reales del acuario.</div>`;
   box.innerHTML=out;
+  } catch (err) {
+    console.error("ASISTENTE", err);
+  }
 }
 
 function render(){
