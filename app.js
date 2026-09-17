@@ -915,6 +915,8 @@ document.querySelectorAll(".quick-chip").forEach(btn=>btn.addEventListener("clic
   busqueda=btn.dataset.search||"";$("searchInput").value=busqueda;suggestionIndex=-1;render();$("searchInput").focus();
 }));
 document.body.addEventListener("click",e=>{
+  const customerControl=e.target.closest("input[data-customer-select], label.customer-select");
+  if(customerControl){ e.stopPropagation(); return; }
   const chip=e.target.closest(".chip");
   if(chip){
     const {group,key}=chip.dataset;
