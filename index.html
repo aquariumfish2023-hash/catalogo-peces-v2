@@ -112,11 +112,13 @@
         <div id="advancedFiltersPanel" class="advanced-filters-panel hidden">
           <div class="advanced-grid">
             <label class="filter-field"><span>Familia</span><select id="filterFamilia"><option value="">Todas las familias</option></select></label>
+            <label class="filter-field"><span>Temperamento</span><select id="filterTemperamento"><option value="">Todos los temperamentos</option><option value="pacifico">Pacífico</option><option value="semi-agresivo">Semi-agresivo</option><option value="agresivo">Agresivo</option></select></label>
+            <label class="filter-field"><span>Tamaño adulto máximo</span><div class="input-with-unit"><input id="filterTamano" type="number" step="0.5" min="0" max="200" placeholder="Ej. 10"><b>cm</b></div></label>
             <label class="filter-field"><span>Temperatura compatible</span><div class="input-with-unit"><input id="filterTemp" type="number" step="0.5" min="0" max="50" placeholder="Ej. 26"><b>°C</b></div></label>
             <label class="filter-field"><span>pH compatible</span><div class="input-with-unit"><input id="filterPh" type="number" step="0.1" min="0" max="14" placeholder="Ej. 7"><b>pH</b></div></label>
             <label class="filter-field"><span>Acuario disponible</span><div class="input-with-unit"><input id="filterAcuario" type="number" step="10" min="0" placeholder="Ej. 100"><b>L</b></div></label>
           </div>
-          <div class="advanced-help">Los valores de temperatura y pH buscan peces cuyo rango incluya el valor indicado. El acuario muestra peces cuyo mínimo sea igual o menor al volumen que escribas.</div>
+          <div class="advanced-help">Temperatura y pH buscan peces cuyo rango incluya el valor indicado. El tamaño filtra peces hasta los cm indicados y el acuario muestra peces cuyo mínimo sea igual o menor al volumen escrito.</div>
           <button id="clearAdvancedFilters" class="clear-advanced" type="button">Limpiar filtros avanzados</button>
         </div>
       </section>
