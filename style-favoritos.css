@@ -5,6 +5,12 @@ body{min-height:100vh}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
 .login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0e2a2b;padding:20px}
+
+.login-brand{width:100%;margin:-30px -26px 22px;width:calc(100% + 52px);overflow:hidden;border-radius:18px 18px 0 0;background:#0e2a2b}
+.login-brand img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover}
+@media (max-width:520px){
+  .login-brand{margin:-30px -26px 20px;width:calc(100% + 52px)}
+}
 .login-box{background:#fff;border-radius:18px;padding:30px 26px;width:100%;max-width:370px;box-shadow:0 20px 60px rgba(0,0,0,.22)}
 .login-title{font-family:'Fraunces',serif;font-size:25px;font-weight:600;color:#0e2a2b;text-align:center}
 .login-sub{font-size:13px;line-height:1.45;color:#5c7b78;text-align:center;margin:7px 0 22px}

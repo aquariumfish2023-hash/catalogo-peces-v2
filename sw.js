@@ -1,4 +1,4 @@
-const CACHE = "catalogo-peces-v2-9";
+const CACHE = "catalogo-peces-v2-10-logo";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,7 +6,8 @@ const APP_SHELL = [
   "./app.js",
   "./manifest.json",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./logo-empresa.jpg"
 ];
 self.addEventListener("install", (event) => {
   event.waitUntil(
