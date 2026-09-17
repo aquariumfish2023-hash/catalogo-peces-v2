@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /peces/{pezId} {
+      // El catálogo puede consultarse públicamente desde el Modo Cliente.
+      allow read: if true;
+      // Solo usuarios autenticados pueden crear, editar o eliminar.
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+    }
+  }
+}

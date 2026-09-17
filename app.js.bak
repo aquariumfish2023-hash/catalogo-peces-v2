@@ -228,8 +228,6 @@ const MAX_FIRESTORE_IMAGE_BYTES = 500 * 1024;
 let catalogo=[], busqueda="", filtroZona=null, filtroCuidado=null, soloFavoritos=false;
 let filtroFamilia="", filtroTemperamento="", filtroTamano="", filtroTemp="", filtroPh="", filtroAcuario="";
 let expandido=null, vistaInterna=true, editando=null, fotoTemp=null, seleccionadosCliente=new Set();
-const paramsPublicos=new URLSearchParams(window.location.search);
-const accesoAdmin=paramsPublicos.get("admin")==="1";
 let cantidadesCliente=new Map();
 let guardando=false, usuarioActual=null, unsubscribeCatalogo=null;
 
@@ -269,27 +267,17 @@ function validarDatos(d){
 }
 
 onAuthStateChanged(auth,user=>{
-  // La URL normal es pública para clientes. La administración se abre con ?admin=1.
-  if(accesoAdmin){
-    if(user){
-      usuarioActual=user;
-      vistaInterna=true;
-      $("loginScreen").classList.add("hidden");
-      $("app").classList.remove("hidden");
-      if(!unsubscribeCatalogo) iniciarSuscripcion(true);
-    }else{
-      usuarioActual=null;
-      $("loginScreen").classList.remove("hidden");
-      $("app").classList.add("hidden");
-      if(unsubscribeCatalogo){unsubscribeCatalogo();unsubscribeCatalogo=null}
-      catalogo=[]; render();
-    }
-  }else{
-    usuarioActual=user||null;
-    vistaInterna=false;
+  if(user){
+    usuarioActual=user;
     $("loginScreen").classList.add("hidden");
     $("app").classList.remove("hidden");
-    if(!unsubscribeCatalogo) iniciarSuscripcion(false);
+    if(!unsubscribeCatalogo) iniciarSuscripcion();
+  }else{
+    usuarioActual=null;
+    $("loginScreen").classList.remove("hidden");
+    $("app").classList.add("hidden");
+    if(unsubscribeCatalogo){unsubscribeCatalogo();unsubscribeCatalogo=null}
+    catalogo=[]; render();
   }
 });
 
@@ -299,12 +287,9 @@ $("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")window.ingr
 $("googleLoginBtn").addEventListener("click",()=>window.ingresarConGoogle());
 $("logoutBtn").addEventListener("click",()=>signOut(auth));
 
-function iniciarSuscripcion(esAdmin=false){
-  const fuente=esAdmin
-    ? query(pecesCol,where("ownerUid","==",auth.currentUser.uid))
-    : pecesCol;
+function iniciarSuscripcion(){
   unsubscribeCatalogo=onSnapshot(
-    fuente,
+    query(pecesCol,where("ownerUid","==",auth.currentUser.uid)),
     snap=>{
       catalogo=snap.docs.map(d=>({id:d.id,...d.data()}))
         .sort((a,b)=>String(a.nombreComun||"").localeCompare(String(b.nombreComun||""),"es"));
