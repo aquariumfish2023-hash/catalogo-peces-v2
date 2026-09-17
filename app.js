@@ -471,6 +471,8 @@ function renderAsistente(){
 function render(){
   const filtrados=filtradosActuales();
   if($("toggleView")) $("toggleView").textContent=vistaInterna?"👁 Modo cliente":"🔐 Modo administración";
+  const customerBtn=$("customerCatalogBtn");
+  if(customerBtn) customerBtn.style.display=vistaInterna?"none":"";
   $("countRow").textContent=`${filtrados.length} ${filtrados.length===1?"especie":"especies"} mostradas`;
   $("totalCount").textContent=catalogo.length;
   $("familyCount").textContent=new Set(catalogo.map(p=>String(p.familia||"").trim().toLowerCase()).filter(Boolean)).size;
@@ -508,7 +510,7 @@ function entryHtml(p,i){
           <span class="badge" style="color:${cuidado.color};border-color:${cuidado.color}">${cuidado.label}</span>
         </div>
       </div>
-      <div class="entry-right"><div class="entry-actions-top">${vistaInterna?`<label class="customer-select" title="Agregar a lista para cliente"><input type="checkbox" data-customer-select="${p.id}" ${seleccionadosCliente.has(p.id)?"checked":""}><span>Cliente</span></label>`:""}<button type="button" class="favorite-btn ${p.favorito?"active":""}" data-favorite="${p.id}" title="${p.favorito?"Quitar de favoritos":"Agregar a favoritos"}" aria-label="${p.favorito?"Quitar de favoritos":"Agregar de favoritos"}">${p.favorito?"★":"☆"}</button></div>${price}<span class="chevron ${open?"open":""}">▾</span></div>
+      <div class="entry-right"><div class="entry-actions-top">${!vistaInterna?`<label class="customer-select" title="Agregar a lista para cliente"><input type="checkbox" data-customer-select="${p.id}" ${seleccionadosCliente.has(p.id)?"checked":""}><span>Cliente</span></label>`:""}<button type="button" class="favorite-btn ${p.favorito?"active":""}" data-favorite="${p.id}" title="${p.favorito?"Quitar de favoritos":"Agregar a favoritos"}" aria-label="${p.favorito?"Quitar de favoritos":"Agregar de favoritos"}">${p.favorito?"★":"☆"}</button></div>${price}<span class="chevron ${open?"open":""}">▾</span></div>
     </div>
     ${open?detailHtml(p):""}
   </article>`;
