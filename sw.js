@@ -1,4 +1,4 @@
-const CACHE = "catalogo-peces-v2-10-logo";
+const CACHE = "catalogo-peces-v2-11-modo-cliente";
 const APP_SHELL = [
   "./",
   "./index.html",

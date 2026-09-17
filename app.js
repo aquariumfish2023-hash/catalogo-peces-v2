@@ -798,14 +798,23 @@ $("detailBackBtn").addEventListener("click",closeDetailModal);
 $("detailOverlay").addEventListener("click",e=>{if(e.target.id==="detailOverlay")closeDetailModal()});
 $("detailShareBtn").addEventListener("click",()=>{const id=document.querySelector("[data-detail-share]")?.dataset.detailShare;const p=catalogo.find(x=>x.id===id);if(p)sharePez(p)});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("detailOverlay").classList.contains("hidden"))closeDetailModal()});
+document.body.addEventListener("change",e=>{
+  const input=e.target.closest("input[data-customer-select]");
+  if(!input)return;
+  const id=input.dataset.customerSelect;
+  if(input.checked) seleccionadosCliente.add(id); else seleccionadosCliente.delete(id);
+  actualizarListaClienteUI();
+});
+
 document.body.addEventListener("click",e=>{
-  const select=e.target.closest("[data-customer-select]");
-  if(select){
+  const input=e.target.closest("input[data-customer-select]");
+  if(input){
+    e.stopPropagation();
+    return;
+  }
+  const selectLabel=e.target.closest("label.customer-select");
+  if(selectLabel){
     e.preventDefault();
-    e.stopImmediatePropagation();
-    const id=select.dataset.customerSelect;
-    if(select.checked) seleccionadosCliente.add(id); else seleccionadosCliente.delete(id);
-    actualizarListaClienteUI();
     return;
   }
   const share=e.target.closest("[data-detail-share]"); if(share){const p=catalogo.find(x=>x.id===share.dataset.detailShare);if(p)sharePez(p);return;}
@@ -943,7 +952,7 @@ function htmlCliente(p, index){
   const cuidado=escapeHtml((CUIDADOS[p.cuidado]||{}).label||"Consultar");
   const temp=(p.tempMinC!=null||p.tempMaxC!=null)?`${p.tempMinC??"—"}–${p.tempMaxC??"—"} °C`:"Consultar";
   const ph=(p.phMin!=null||p.phMax!=null)?`${p.phMin??"—"}–${p.phMax??"—"}`:"Consultar";
-  return `<article class="customer-card"><div class="customer-photo">${foto}</div><div class="customer-info"><div class="customer-number">${String(index+1).padStart(2,"0")}</div><h2>${escapeHtml(p.nombreComun||"Sin nombre")}</h2><em>${escapeHtml(p.nombreCientifico||"")}</em><div class="customer-badges"><span>${cuidado}</span><span>${temp}</span><span>pH ${ph}</span></div>${p.tamanoCm!=null?`<div class="customer-meta">Tamaño adulto: ${escapeHtml(p.tamanoCm)} cm</div>`:""}${p.origen?`<div class="customer-meta">Origen: ${escapeHtml(p.origen)}</div>`:""}${precio}</div></article>`;
+  return `<article class="customer-card"><div class="customer-photo">${foto}</div><div class="customer-info"><div class="customer-number">${String(index+1).padStart(2,"0")}</div><h2>${escapeHtml(p.nombreComun||"Sin nombre")}</h2><em>${escapeHtml(p.nombreCientifico||"")}</em><div class="customer-badges"><span>${cuidado}</span><span>${temp}</span><span>pH ${ph}</span></div>${p.tamanoCm!=null?`<div class="customer-meta">Tamaño adulto: ${escapeHtml(p.tamanoCm)} cm</div>`:""}${p.origen?`<div class="customer-meta">Origen: ${escapeHtml(p.origen)}</div>`:""}${precio}<div class="request-line"><span>Cantidad deseada:</span><span class="request-box"></span></div></div></article>`;
 }
 function crearCatalogoCliente(){
   let peces=[...seleccionadosCliente].map(id=>catalogo.find(p=>p.id===id)).filter(Boolean);
@@ -955,8 +964,8 @@ function crearCatalogoCliente(){
   const w=window.open("","_blank");
   if(!w){banner("El navegador bloqueó la ventana. Permite ventanas emergentes para crear el catálogo.","error");return;}
   w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${nombre} · Catálogo</title><style>
-  *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7f6;color:#173a3b}.wrap{max-width:980px;margin:auto;padding:28px}.cover{text-align:center;background:#0e2a2b;color:#fff;border-radius:22px;padding:34px 24px;margin-bottom:24px}.cover img{width:min(260px,70vw);max-height:210px;object-fit:contain;border-radius:16px;margin-bottom:14px}.cover h1{margin:5px 0;font-size:30px}.cover p{margin:8px 0 0;color:#cce2de}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}.customer-card{background:#fff;border:1px solid #dce8e5;border-radius:18px;overflow:hidden;display:grid;grid-template-columns:150px 1fr;min-height:190px;box-shadow:0 5px 18px rgba(14,42,43,.07)}.customer-photo{background:#e8f1ef;min-height:190px}.customer-photo img{width:100%;height:100%;object-fit:cover}.no-photo{height:100%;display:grid;place-items:center;font-size:55px}.customer-info{padding:18px}.customer-number{font-size:10px;color:#8aa5a0;letter-spacing:2px}.customer-info h2{margin:3px 0;font-size:21px}.customer-info em{color:#63807b;font-size:12px}.customer-badges{display:flex;gap:5px;flex-wrap:wrap;margin:12px 0}.customer-badges span{font-size:10px;padding:5px 8px;border-radius:20px;background:#edf5f3}.customer-meta{font-size:11px;color:#5d7470;margin-top:5px}.customer-price{font-size:22px;font-weight:800;margin-top:12px}.footer{text-align:center;color:#78908b;font-size:11px;margin-top:22px}@media print{body{background:#fff}.wrap{padding:0}.cover{break-after:page}.customer-card{box-shadow:none;break-inside:avoid}.grid{display:grid;grid-template-columns:1fr 1fr}}@media(max-width:600px){.wrap{padding:14px}.customer-card{grid-template-columns:105px 1fr}.customer-photo{min-height:160px}.customer-info{padding:13px}.cover{padding:25px 16px}}
-  </style></head><body><div class="wrap"><section class="cover"><img src="${logoUrl}" alt="${nombre}"><h1>${nombre}</h1><p>Catálogo de peces de agua dulce</p><p>${peces.length} especie${peces.length===1?"":"s"} seleccionada${peces.length===1?"":"s"}</p></section><section class="grid">${cards}</section><div class="footer">Información del catálogo · ${new Date().toLocaleDateString("es-CO")}</div></div><script>setTimeout(()=>window.print(),450)<\/script></body></html>`);
+  *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7f6;color:#173a3b}.wrap{max-width:980px;margin:auto;padding:28px}.toolbar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:10px;padding:10px 0 18px}.toolbar button{border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;font-size:14px}.print-btn{background:#0e2a2b;color:#fff}.close-btn{background:#e8f1ef;color:#173a3b}.cover{text-align:center;background:#0e2a2b;color:#fff;border-radius:22px;padding:34px 24px;margin-bottom:24px}.cover img{width:min(260px,70vw);max-height:210px;object-fit:contain;border-radius:16px;margin-bottom:14px}.cover h1{margin:5px 0;font-size:30px}.cover p{margin:8px 0 0;color:#cce2de}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}.customer-card{background:#fff;border:1px solid #dce8e5;border-radius:18px;overflow:hidden;display:grid;grid-template-columns:150px 1fr;min-height:190px;box-shadow:0 5px 18px rgba(14,42,43,.07)}.customer-photo{background:#e8f1ef;min-height:190px}.customer-photo img{width:100%;height:100%;object-fit:cover}.no-photo{height:100%;display:grid;place-items:center;font-size:55px}.customer-info{padding:18px}.customer-number{font-size:10px;color:#8aa5a0;letter-spacing:2px}.customer-info h2{margin:3px 0;font-size:21px}.customer-info em{color:#63807b;font-size:12px}.customer-badges{display:flex;gap:5px;flex-wrap:wrap;margin:12px 0}.customer-badges span{font-size:10px;padding:5px 8px;border-radius:20px;background:#edf5f3}.customer-meta{font-size:11px;color:#5d7470;margin-top:5px}.customer-price{font-size:22px;font-weight:800;margin-top:12px}.request-line{display:flex;align-items:center;gap:10px;margin-top:15px;font-size:12px;font-weight:700}.request-box{display:inline-block;width:70px;height:28px;border:2px solid #9bb2ad;border-radius:7px}.footer{text-align:center;color:#78908b;font-size:11px;margin-top:22px}@media print{body{background:#fff}.wrap{padding:0}.toolbar{display:none}.cover{break-after:page}.customer-card{box-shadow:none;break-inside:avoid}.grid{display:grid;grid-template-columns:1fr 1fr}.footer{margin-top:15px}}@media(max-width:600px){.wrap{padding:14px}.customer-card{grid-template-columns:105px 1fr}.customer-photo{min-height:160px}.customer-info{padding:13px}.cover{padding:25px 16px}.toolbar{position:static}}
+  </style></head><body><div class="wrap"><div class="toolbar"><button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button><button class="close-btn" onclick="window.close()">✕ Cerrar</button></div><section class="cover"><img src="${logoUrl}" alt="${nombre}"><h1>${nombre}</h1><p>Lista de peces de agua dulce</p><p>${peces.length} especie${peces.length===1?"":"s"} seleccionada${peces.length===1?"":"s"}</p></section><section class="grid">${cards}</section><div class="footer">El cliente puede indicar la cantidad deseada en cada especie · ${new Date().toLocaleDateString("es-CO")}</div></div></body></html>`);
   w.document.close();
 }
 $("customerCatalogBtn")?.addEventListener("click",crearCatalogoCliente);
