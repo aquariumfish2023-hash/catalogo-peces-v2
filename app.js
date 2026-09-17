@@ -228,6 +228,7 @@ const MAX_FIRESTORE_IMAGE_BYTES = 500 * 1024;
 let catalogo=[], busqueda="", filtroZona=null, filtroCuidado=null, soloFavoritos=false;
 let filtroFamilia="", filtroTemperamento="", filtroTamano="", filtroTemp="", filtroPh="", filtroAcuario="";
 let expandido=null, vistaInterna=true, editando=null, fotoTemp=null, seleccionadosCliente=new Set();
+let cantidadesCliente=new Map();
 let guardando=false, usuarioActual=null, unsubscribeCatalogo=null;
 
 function setStoreName(value){
@@ -948,29 +949,55 @@ function actualizarListaClienteUI(){
   if(count)count.textContent=n;
   if(btn){btn.classList.toggle("has-selection",n>0);btn.textContent=`📋 Lista cliente ${n?`(${n})`:`(0)`}`;}
 }
-function htmlCliente(p, index){
+function cantidadCliente(id){
+  const n=Number(cantidadesCliente.get(id)||1);
+  return Number.isFinite(n)&&n>0?Math.max(1,Math.floor(n)):1;
+}
+function setCantidadCliente(id,value){
+  const n=Math.max(1,Math.min(999,Math.floor(Number(value)||1)));
+  cantidadesCliente.set(id,n);
+}
+function totalUnidadesCliente(peces){return peces.reduce((sum,p)=>sum+cantidadCliente(p.id),0);}
+function htmlCliente(p,index){
   const foto=p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun||"Pez")}">`:`<div class="no-photo">🐟</div>`;
   const precio=(p.precio!==null&&p.precio!==undefined&&p.precio!=="")?`<div class="customer-price">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"";
   const cuidado=escapeHtml((CUIDADOS[p.cuidado]||{}).label||"Consultar");
   const temp=(p.tempMinC!=null||p.tempMaxC!=null)?`${p.tempMinC??"—"}–${p.tempMaxC??"—"} °C`:"Consultar";
   const ph=(p.phMin!=null||p.phMax!=null)?`${p.phMin??"—"}–${p.phMax??"—"}`:"Consultar";
-  return `<article class="customer-card"><div class="customer-photo">${foto}</div><div class="customer-info"><div class="customer-number">${String(index+1).padStart(2,"0")}</div><h2>${escapeHtml(p.nombreComun||"Sin nombre")}</h2><em>${escapeHtml(p.nombreCientifico||"")}</em><div class="customer-badges"><span>${cuidado}</span><span>${temp}</span><span>pH ${ph}</span></div>${p.tamanoCm!=null?`<div class="customer-meta">Tamaño adulto: ${escapeHtml(p.tamanoCm)} cm</div>`:""}${p.origen?`<div class="customer-meta">Origen: ${escapeHtml(p.origen)}</div>`:""}${precio}<div class="request-line"><span>Cantidad deseada:</span><span class="request-box"></span></div></div></article>`;
+  const cantidad=cantidadCliente(p.id);
+  return `<article class="customer-card"><div class="customer-photo">${foto}</div><div class="customer-info"><div class="customer-number">${String(index+1).padStart(2,"0")}</div><h2>${escapeHtml(p.nombreComun||"Sin nombre")}</h2><em>${escapeHtml(p.nombreCientifico||"")}</em><div class="customer-badges"><span>${cuidado}</span><span>${temp}</span><span>pH ${ph}</span></div>${p.tamanoCm!=null?`<div class="customer-meta">Tamaño adulto: ${escapeHtml(p.tamanoCm)} cm</div>`:""}${p.origen?`<div class="customer-meta">Origen: ${escapeHtml(p.origen)}</div>`:""}${precio}<div class="request-line"><span>Cantidad solicitada:</span><div class="qty-control"><button type="button" data-qty-minus="${escapeHtml(p.id)}" aria-label="Disminuir cantidad">−</button><input type="number" min="1" max="999" value="${cantidad}" data-qty-input="${escapeHtml(p.id)}" aria-label="Cantidad de ${escapeHtml(p.nombreComun||"pez")}"><button type="button" data-qty-plus="${escapeHtml(p.id)}" aria-label="Aumentar cantidad">+</button></div></div></div></article>`;
 }
-function crearCatalogoCliente(){
-  let peces=[...seleccionadosCliente].map(id=>catalogo.find(p=>p.id===id)).filter(Boolean);
-  if(!peces.length){ peces=filtradosActuales(); }
-  if(!peces.length){ banner("No hay peces para crear la lista de cliente.","error"); return; }
-  const nombre=escapeHtml($('storeName')?.value?.trim()||"AQUARIUMFISH");
+function abrirListaCliente(){
+  const peces=[...seleccionadosCliente].map(id=>catalogo.find(p=>p.id===id)).filter(Boolean);
+  if(!peces.length){banner("Selecciona al menos un pez para crear la lista de cliente.","error");return;}
+  peces.forEach(p=>{if(!cantidadesCliente.has(p.id))cantidadesCliente.set(p.id,1);});
+  const nombre=escapeHtml($("storeName")?.value?.trim()||"AQUARIUMFISH");
   const logoUrl=new URL("./logo-empresa.jpg",window.location.href).href;
+  const total=totalUnidadesCliente(peces);
   const cards=peces.map(htmlCliente).join("");
   const w=window.open("","_blank");
-  if(!w){banner("El navegador bloqueó la ventana. Permite ventanas emergentes para crear el catálogo.","error");return;}
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${nombre} · Catálogo</title><style>
-  *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7f6;color:#173a3b}.wrap{max-width:980px;margin:auto;padding:28px}.toolbar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:10px;padding:10px 0 18px}.toolbar button{border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;font-size:14px}.print-btn{background:#0e2a2b;color:#fff}.close-btn{background:#e8f1ef;color:#173a3b}.cover{text-align:center;background:#0e2a2b;color:#fff;border-radius:22px;padding:34px 24px;margin-bottom:24px}.cover img{width:min(260px,70vw);max-height:210px;object-fit:contain;border-radius:16px;margin-bottom:14px}.cover h1{margin:5px 0;font-size:30px}.cover p{margin:8px 0 0;color:#cce2de}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}.customer-card{background:#fff;border:1px solid #dce8e5;border-radius:18px;overflow:hidden;display:grid;grid-template-columns:150px 1fr;min-height:190px;box-shadow:0 5px 18px rgba(14,42,43,.07)}.customer-photo{background:#e8f1ef;min-height:190px}.customer-photo img{width:100%;height:100%;object-fit:cover}.no-photo{height:100%;display:grid;place-items:center;font-size:55px}.customer-info{padding:18px}.customer-number{font-size:10px;color:#8aa5a0;letter-spacing:2px}.customer-info h2{margin:3px 0;font-size:21px}.customer-info em{color:#63807b;font-size:12px}.customer-badges{display:flex;gap:5px;flex-wrap:wrap;margin:12px 0}.customer-badges span{font-size:10px;padding:5px 8px;border-radius:20px;background:#edf5f3}.customer-meta{font-size:11px;color:#5d7470;margin-top:5px}.customer-price{font-size:22px;font-weight:800;margin-top:12px}.request-line{display:flex;align-items:center;gap:10px;margin-top:15px;font-size:12px;font-weight:700}.request-box{display:inline-block;width:70px;height:28px;border:2px solid #9bb2ad;border-radius:7px}.footer{text-align:center;color:#78908b;font-size:11px;margin-top:22px}@media print{body{background:#fff}.wrap{padding:0}.toolbar{display:none}.cover{break-after:page}.customer-card{box-shadow:none;break-inside:avoid}.grid{display:grid;grid-template-columns:1fr 1fr}.footer{margin-top:15px}}@media(max-width:600px){.wrap{padding:14px}.customer-card{grid-template-columns:105px 1fr}.customer-photo{min-height:160px}.customer-info{padding:13px}.cover{padding:25px 16px}.toolbar{position:static}}
-  </style></head><body><div class="wrap"><div class="toolbar"><button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button><button class="close-btn" onclick="window.close()">✕ Cerrar</button></div><section class="cover"><img src="${logoUrl}" alt="${nombre}"><h1>${nombre}</h1><p>Lista de peces de agua dulce</p><p>${peces.length} especie${peces.length===1?"":"s"} seleccionada${peces.length===1?"":"s"}</p></section><section class="grid">${cards}</section><div class="footer">El cliente puede indicar la cantidad deseada en cada especie · ${new Date().toLocaleDateString("es-CO")}</div></div></body></html>`);
+  if(!w){banner("El navegador bloqueó la ventana. Permite ventanas emergentes para crear la lista.","error");return;}
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${nombre} · Lista cliente</title><style>
+  *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7f6;color:#173a3b}.wrap{max-width:980px;margin:auto;padding:20px}.toolbar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:10px;padding:8px 0 16px;flex-wrap:wrap}.toolbar button{border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;font-size:14px}.print-btn{background:#0e2a2b;color:#fff}.close-btn{background:#e8f1ef;color:#173a3b}.cover{text-align:center;background:#0e2a2b;color:#fff;border-radius:22px;padding:28px 20px;margin-bottom:18px}.cover img{width:min(230px,68vw);max-height:180px;object-fit:contain;border-radius:14px;margin-bottom:10px}.cover h1{margin:5px 0;font-size:28px}.cover p{margin:7px 0 0;color:#cce2de}.summary{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:0 0 18px}.summary span{background:#fff;border:1px solid #dce8e5;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}.customer-card{background:#fff;border:1px solid #dce8e5;border-radius:18px;overflow:hidden;display:grid;grid-template-columns:150px 1fr;min-height:190px;box-shadow:0 5px 18px rgba(14,42,43,.07)}.customer-photo{background:#e8f1ef;min-height:190px}.customer-photo img{width:100%;height:100%;object-fit:cover}.no-photo{height:100%;display:grid;place-items:center;font-size:55px}.customer-info{padding:17px}.customer-number{font-size:10px;color:#8aa5a0;letter-spacing:2px}.customer-info h2{margin:3px 0;font-size:20px}.customer-info em{color:#63807b;font-size:12px}.customer-badges{display:flex;gap:5px;flex-wrap:wrap;margin:11px 0}.customer-badges span{font-size:10px;padding:5px 8px;border-radius:20px;background:#edf5f3}.customer-meta{font-size:11px;color:#5d7470;margin-top:5px}.customer-price{font-size:20px;font-weight:800;margin-top:11px}.request-line{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:15px;font-size:12px;font-weight:700}.qty-control{display:flex;align-items:center;border:1px solid #b7cbc6;border-radius:10px;overflow:hidden;background:#fff}.qty-control button{width:32px;height:32px;border:0;background:#edf5f3;color:#173a3b;font-size:20px;font-weight:700;cursor:pointer}.qty-control input{width:52px;height:32px;border:0;border-left:1px solid #dce8e5;border-right:1px solid #dce8e5;text-align:center;font-weight:800;font-size:14px;outline:none}.footer{text-align:center;color:#78908b;font-size:11px;margin-top:22px}.note{text-align:center;font-size:12px;color:#617b76;margin:4px 0 20px}@media print{body{background:#fff}.wrap{padding:0}.toolbar{display:none}.cover{break-after:page}.customer-card{box-shadow:none;break-inside:avoid}.grid{display:grid;grid-template-columns:1fr 1fr}.qty-control button{display:none}.qty-control input{border:1px solid #9bb2ad;border-radius:6px;width:60px}.footer{margin-top:15px}}@media(max-width:600px){.wrap{padding:12px}.customer-card{grid-template-columns:105px 1fr}.customer-photo{min-height:160px}.customer-info{padding:13px}.cover{padding:22px 14px}.toolbar{position:static}.request-line{align-items:flex-start;flex-direction:column;gap:7px}}
+  </style></head><body><div class="wrap"><div class="toolbar"><button class="print-btn" id="printBtn">🖨️ Imprimir / Guardar PDF</button><button class="close-btn" onclick="window.close()">✕ Cerrar</button></div><section class="cover"><img src="${logoUrl}" alt="${nombre}"><h1>${nombre}</h1><p>Lista de pedido · Peces de agua dulce</p><p id="speciesSummary">${peces.length} especie${peces.length===1?"":"s"} · ${total} unidad${total===1?"":"es"}</p></section><div class="summary"><span>🐟 Especies: <b id="speciesCount">${peces.length}</b></span><span>🔢 Unidades: <b id="unitsCount">${total}</b></span></div><p class="note">Indica la cantidad que deseas de cada especie. Puedes imprimir esta lista o guardarla como PDF.</p><section class="grid" id="customerGrid">${cards}</section><div class="footer">Fecha: ${new Date().toLocaleDateString("es-CO")} · ${nombre}</div></div><script>
+  const totalUnits=()=>[...document.querySelectorAll('[data-qty-input]')].reduce((s,i)=>s+Math.max(1,Math.min(999,parseInt(i.value)||1)),0);
+  function refresh(){document.getElementById('unitsCount').textContent=totalUnits();}
+  document.addEventListener('click',e=>{const plus=e.target.closest('[data-qty-plus]');const minus=e.target.closest('[data-qty-minus]');if(!plus&&!minus)return;const id=(plus||minus).dataset.qtyPlus||(plus||minus).dataset.qtyMinus;const input=document.querySelector('[data-qty-input="'+CSS.escape(id)+'"]');if(!input)return;let n=parseInt(input.value)||1;n=plus?Math.min(999,n+1):Math.max(1,n-1);input.value=n;refresh();});
+  document.addEventListener('input',e=>{if(e.target.matches('[data-qty-input]')){let n=parseInt(e.target.value)||1;if(n<1)n=1;if(n>999)n=999;e.target.value=n;refresh();}});
+  document.getElementById('printBtn').addEventListener('click',()=>window.print());
+  refresh();
+  <\/script></body></html>`);
   w.document.close();
 }
-$("customerCatalogBtn")?.addEventListener("click",crearCatalogoCliente);
+$("customerCatalogBtn")?.addEventListener("click",abrirListaCliente);
+
+document.body.addEventListener("change",e=>{
+  const input=e.target.closest("input[data-customer-select]");
+  if(!input)return;
+  const id=input.dataset.customerSelect;
+  if(input.checked){seleccionadosCliente.add(id);if(!cantidadesCliente.has(id))cantidadesCliente.set(id,1);} else {seleccionadosCliente.delete(id);cantidadesCliente.delete(id);}
+  actualizarListaClienteUI();
+});
 
 $("toggleView").addEventListener("click",()=>{
   vistaInterna=!vistaInterna;
