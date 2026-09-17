@@ -230,6 +230,17 @@ let filtroFamilia="", filtroTemperamento="", filtroTamano="", filtroTemp="", fil
 let expandido=null, vistaInterna=true, editando=null, fotoTemp=null, seleccionadosCliente=new Set();
 const paramsPublicos=new URLSearchParams(window.location.search);
 const accesoAdmin=paramsPublicos.get("admin")==="1";
+
+// La URL pública es exclusivamente para clientes: no muestra selector de perfiles
+// ni salida de administración. La administración continúa disponible con ?admin=1.
+if(!accesoAdmin){
+  window.addEventListener("DOMContentLoaded",()=>{
+    $("toggleView")?.classList.add("hidden");
+    $("logoutBtn")?.classList.add("hidden");
+    const hint=$("modeHint");
+    if(hint) hint.textContent="Modo cliente · catálogo público";
+  });
+}
 let cantidadesCliente=new Map();
 let guardando=false, usuarioActual=null, unsubscribeCatalogo=null;
 
