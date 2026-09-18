@@ -1046,7 +1046,9 @@ document.body.addEventListener("click",e=>{
 
 function actualizarListaClienteUI(){
   const n=seleccionadosCliente.size;
-  const unidades=totalUnidadesCliente([...seleccionadosCliente].map(id=>catalogo.find(p=>p.id===id)).filter(Boolean));
+  const pecesSeleccionados=[...seleccionadosCliente].map(id=>catalogo.find(p=>p.id===id)).filter(Boolean);
+  const unidades=totalUnidadesCliente(pecesSeleccionados);
+  const total=totalPrecioCliente(pecesSeleccionados);
   const btn=$("customerCatalogBtn");
   const count=$("selectedCount");
   if(count)count.textContent=n;
@@ -1059,7 +1061,9 @@ function actualizarListaClienteUI(){
   if(bar&&!vistaInterna){
     bar.classList.toggle("hidden",n===0);
     if(orderCount)orderCount.textContent=n;
-    if(summary)summary.textContent=n?`${unidades} unidad${unidades===1?"":"es"} · revisar y enviar`:"Sin peces seleccionados";
+    if(summary)summary.textContent=n
+      ? `${unidades} unidad${unidades===1?"":"es"} · ${total>0?"Total: $"+total.toLocaleString("es-CO"):"Total por confirmar"}`
+      : "Sin peces seleccionados";
   }
 }
 function actualizarSeleccionCliente(id,forzar){
@@ -1080,6 +1084,7 @@ function setCantidadCliente(id,value){
   cantidadesCliente.set(id,n);
 }
 function totalUnidadesCliente(peces){return peces.reduce((sum,p)=>sum+cantidadCliente(p.id),0);}
+function totalPrecioCliente(peces){return peces.reduce((sum,p)=>sum+(Number(p.precio)||0)*cantidadCliente(p.id),0);}
 function htmlCliente(p,index){
   const foto=p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun||"Pez")}">`:`<div class="no-photo">🐟</div>`;
   const precio=(p.precio!==null&&p.precio!==undefined&&p.precio!=="")?`<div class="customer-price">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"";
@@ -1105,7 +1110,7 @@ function abrirSeleccionCliente(){
   const safeName=JSON.stringify(nombreTexto);
   const html=`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${nombre} · Mi selección</title><style>
   *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7f6;color:#173a3b}.wrap{max-width:980px;margin:auto;padding:16px}.toolbar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:9px;padding:4px 0 14px;flex-wrap:wrap}.toolbar button{border:0;border-radius:12px;padding:12px 17px;font-weight:700;cursor:pointer;font-size:14px}.wa-btn{background:#25d366;color:#fff}.print-btn{background:#0e2a2b;color:#fff}.close-btn{background:#e8f1ef;color:#173a3b}.clear-all{background:#f4e9e6;color:#8b4c40}.cover{text-align:center;background:#0e2a2b;color:#fff;border-radius:22px;padding:26px 18px;margin-bottom:16px}.cover img{width:min(220px,68vw);max-height:150px;object-fit:contain;border-radius:14px;margin-bottom:8px}.cover h1{margin:4px 0;font-size:28px}.cover p{margin:6px 0;color:#cce2de}.summary{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 17px}.summary span{background:#fff;border:1px solid #dce8e5;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}.customer-card{background:#fff;border:1px solid #dce8e5;border-radius:18px;overflow:hidden;display:grid;grid-template-columns:150px 1fr;min-height:190px;box-shadow:0 5px 18px rgba(14,42,43,.07)}.customer-photo{background:#e8f1ef;min-height:190px}.customer-photo img{width:100%;height:100%;object-fit:cover}.no-photo{height:100%;display:grid;place-items:center;font-size:55px}.customer-info{padding:17px}.customer-number{font-size:10px;color:#8aa5a0;letter-spacing:2px}.customer-info h2{margin:3px 0;font-size:20px}.customer-info em{color:#63807b;font-size:12px}.customer-badges{display:flex;gap:5px;flex-wrap:wrap;margin:11px 0}.customer-badges span{font-size:10px;padding:5px 8px;border-radius:20px;background:#edf5f3}.customer-meta{font-size:11px;color:#5d7470;margin-top:5px}.customer-price{font-size:20px;font-weight:800;margin-top:11px}.request-line{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:15px;font-size:12px;font-weight:700}.qty-control{display:flex;align-items:center;border:1px solid #b7cbc6;border-radius:10px;overflow:hidden;background:#fff}.qty-control button{width:32px;height:32px;border:0;background:#edf5f3;color:#173a3b;font-size:20px;font-weight:700;cursor:pointer}.qty-control input{width:52px;height:32px;border:0;border-left:1px solid #dce8e5;border-right:1px solid #dce8e5;text-align:center;font-weight:800;font-size:14px;outline:none}.footer{text-align:center;color:#78908b;font-size:11px;margin-top:22px}.note{text-align:center;font-size:12px;color:#617b76;margin:4px 0 20px}@media print{body{background:#fff}.wrap{padding:0}.toolbar{display:none}.cover{break-after:page}.customer-card{box-shadow:none;break-inside:avoid}.grid{display:grid;grid-template-columns:1fr 1fr}.qty-control button{display:none}.qty-control input{border:1px solid #9bb2ad;border-radius:6px;width:60px}.footer{margin-top:15px}}@media(max-width:600px){.wrap{padding:12px}.customer-card{grid-template-columns:105px 1fr}.customer-photo{min-height:160px}.customer-info{padding:13px}.cover{padding:22px 14px}.toolbar{position:static}.request-line{align-items:flex-start;flex-direction:column;gap:7px}}
-  </style></head><body><div class="wrap"><div class="toolbar"><button class="wa-btn" id="waBtn" type="button">💬 Solicitar por WhatsApp</button><button class="print-btn" id="printBtn" type="button">🖨️ Imprimir / Guardar PDF</button><button class="clear-all" id="clearAll" type="button">🗑 Vaciar selección</button><button class="close-btn" id="closeBtn" type="button">✕ Cerrar</button></div><section class="cover"><img src="${logoUrl}" alt="${nombre}"><h1>❤️ Mi selección</h1><p>Mis peces de interés · Agua dulce</p><p id="speciesSummary">${peces.length} especie${peces.length===1?"":"s"} · ${total} unidad${total===1?"":"es"}</p></section><div class="summary"><span>🐟 Especies: <b id="speciesCount">${peces.length}</b></span><span>🔢 Unidades: <b id="unitsCount">${total}</b></span></div><p class="note">Puedes indicar cuántos ejemplares te interesan y enviar la selección por WhatsApp.</p><section class="grid" id="customerGrid">${cards}</section><div class="footer">Fecha: ${new Date().toLocaleDateString("es-CO")} · ${nombre}</div></div></body></html>`;
+  </style></head><body><div class="wrap"><div class="toolbar"><button class="wa-btn" id="waBtn" type="button">💬 Solicitar por WhatsApp</button><button class="print-btn" id="printBtn" type="button">🖨️ Imprimir / Guardar PDF</button><button class="clear-all" id="clearAll" type="button">🗑 Vaciar selección</button><button class="close-btn" id="closeBtn" type="button">✕ Cerrar</button></div><section class="cover"><img src="${logoUrl}" alt="${nombre}"><h1>❤️ Mi selección</h1><p>Mis peces de interés · Agua dulce</p><p id="speciesSummary">${peces.length} especie${peces.length===1?"":"s"} · ${total} unidad${total===1?"":"es"}</p></section><div class="summary"><span>🐟 Especies: <b id="speciesCount">${peces.length}</b></span><span>🔢 Unidades: <b id="unitsCount">${total}</b></span><span>💰 Total estimado: <b id="priceTotal">Por confirmar</b></span></div><p class="note">Puedes indicar cuántos ejemplares te interesan y enviar la selección por WhatsApp.</p><section class="grid" id="customerGrid">${cards}</section><div class="footer">Fecha: ${new Date().toLocaleDateString("es-CO")} · ${nombre}</div></div></body></html>`;
   w.document.open();
   w.document.write(html);
   w.document.close();

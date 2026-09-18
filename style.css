@@ -261,3 +261,8 @@ body.modal-open{overflow:hidden}
 .public-client .toolbar.client-tools-open{display:block;margin-top:4px}
 .public-client .toolbar.client-tools-open + .aquarium-assistant{display:none}
 .public-client .aquarium-assistant.client-assistant-open{display:block}
+
+/* Experiencia Cliente 2.1 — total visible del pedido */
+.client-order-bar button span:nth-child(2){min-width:0;flex:1;text-align:left}
+.client-order-bar button small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:560px){.client-order-bar button small{font-size:11px}}
