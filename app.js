@@ -852,7 +852,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("detailOverlay")
 document.body.addEventListener("click",e=>{
   const btn=e.target.closest("[data-client-select]");
   if(btn){
-    e.stopPropagation();
+    e.stopImmediatePropagation();
     actualizarSeleccionCliente(btn.dataset.clientSelect);
     return;
   }
@@ -1004,11 +1004,11 @@ document.body.addEventListener("click",e=>{
     renderFiltros();render();return;
   }
   const editBtn=e.target.closest("[data-edit]");
-  if(editBtn){e.stopPropagation();openModal(catalogo.find(p=>p.id===editBtn.dataset.edit));return}
+  if(editBtn){e.stopImmediatePropagation();openModal(catalogo.find(p=>p.id===editBtn.dataset.edit));return}
   const favBtn=e.target.closest("[data-favorite]");
-  if(favBtn){e.stopPropagation();toggleFavorito(favBtn.dataset.favorite);return}
+  if(favBtn){e.stopImmediatePropagation();toggleFavorito(favBtn.dataset.favorite);return}
   const delBtn=e.target.closest("[data-del]");
-  if(delBtn){e.stopPropagation();eliminarPez(delBtn.dataset.del);return}
+  if(delBtn){e.stopImmediatePropagation();eliminarPez(delBtn.dataset.del);return}
   const head=e.target.closest(".entry-head");
   if(head){openDetailModal(head.dataset.id);return}
   if(e.target.id==="removeFotoBtn"){
