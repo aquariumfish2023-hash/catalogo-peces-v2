@@ -1085,7 +1085,7 @@ function abrirSeleccionCliente(){
       const qty=Math.max(1,Math.min(999,parseInt(card.querySelector('[data-qty-input]')?.value)||1));
       return '🐟 ' + name + ' x' + qty;
     });
-    const text=`Hola, estoy interesado en estas especies del catálogo ${nombre}:\\n\\n${lines.join("\\n")}\\n\\n¿Me pueden indicar disponibilidad y precio?`;
+    const text="Hola, estoy interesado en estas especies del catálogo " + ${JSON.stringify(nombre)} + ":\\n\\n" + lines.join("\\n") + "\\n\\n¿Me pueden indicar disponibilidad y precio?";
     window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
   });
   document.getElementById('printBtn').addEventListener('click',()=>window.print());refresh();
