@@ -229,10 +229,16 @@ let catalogo=[], busqueda="", filtroZona=null, filtroCuidado=null, soloFavoritos
 let filtroFamilia="", filtroTemperamento="", filtroTamano="", filtroTemp="", filtroPh="", filtroAcuario="";
 let expandido=null, vistaInterna=true, editando=null, fotoTemp=null, seleccionadosCliente=new Set();
 const paramsPublicos=new URLSearchParams(window.location.search);
-const accesoAdmin=paramsPublicos.get("admin")==="1";
+const esPaginaAdmin=window.location.pathname.endsWith("/admin.html") || window.location.pathname.endsWith("admin.html");
+const accesoAdmin=esPaginaAdmin || paramsPublicos.get("admin")==="1";
 
-// La URL pública es exclusivamente para clientes: no muestra selector de perfiles
-// ni salida de administración. La administración continúa disponible con ?admin=1.
+// Compatibilidad: si alguien conserva el antiguo enlace ?admin=1 en index.html,
+// lo llevamos a la nueva página administrativa. El catálogo público nunca muestra login.
+if(paramsPublicos.get("admin")==="1" && !esPaginaAdmin){
+  const url=new URL("admin.html",window.location.href);
+  window.location.replace(url.href);
+}
+
 if(!accesoAdmin){
   window.addEventListener("DOMContentLoaded",()=>{
     $("toggleView")?.classList.add("hidden");
@@ -304,11 +310,11 @@ onAuthStateChanged(auth,user=>{
   }
 });
 
-$("loginBtn").addEventListener("click",()=>window.ingresarConCorreo());
-$("loginEmail").addEventListener("keydown",e=>{if(e.key==="Enter")window.ingresarConCorreo()});
-$("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")window.ingresarConCorreo()});
-$("googleLoginBtn").addEventListener("click",()=>window.ingresarConGoogle());
-$("logoutBtn").addEventListener("click",()=>signOut(auth));
+$("loginBtn")?.addEventListener("click",()=>window.ingresarConCorreo());
+$("loginEmail")?.addEventListener("keydown",e=>{if(e.key==="Enter")window.ingresarConCorreo()});
+$("loginPassword")?.addEventListener("keydown",e=>{if(e.key==="Enter")window.ingresarConCorreo()});
+$("googleLoginBtn")?.addEventListener("click",()=>window.ingresarConGoogle());
+$("logoutBtn")?.addEventListener("click",()=>signOut(auth));
 
 function iniciarSuscripcion(esAdmin=false){
   const fuente=esAdmin
