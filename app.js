@@ -1083,7 +1083,7 @@ function abrirSeleccionCliente(){
     const lines=[...document.querySelectorAll('.customer-card')].map(card=>{
       const name=card.querySelector('h2')?.textContent?.trim()||'Pez';
       const qty=Math.max(1,Math.min(999,parseInt(card.querySelector('[data-qty-input]')?.value)||1));
-      return `🐟 ${name} x${qty}`;
+      return '🐟 ' + name + ' x' + qty;
     });
     const text=`Hola, estoy interesado en estas especies del catálogo ${nombre}:\\n\\n${lines.join("\\n")}\\n\\n¿Me pueden indicar disponibilidad y precio?`;
     window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
