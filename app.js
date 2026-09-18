@@ -1080,12 +1080,21 @@ function abrirSeleccionCliente(){
   document.addEventListener('click',e=>{const plus=e.target.closest('[data-qty-plus]');const minus=e.target.closest('[data-qty-minus]');if(plus||minus){const id=(plus||minus).dataset.qtyPlus||(plus||minus).dataset.qtyMinus;const input=document.querySelector('[data-qty-input="'+CSS.escape(id)+'"]');if(!input)return;let n=parseInt(input.value)||1;n=plus?Math.min(999,n+1):Math.max(1,n-1);input.value=n;refresh();return;}if(e.target.id==='clearAll'){try{window.opener?.postMessage({type:'clear-client-selection'},'*')}catch{};document.getElementById('customerGrid').innerHTML='<p style="grid-column:1/-1;text-align:center;padding:30px">Selección vacía.</p>';return;}});
   document.addEventListener('input',e=>{if(e.target.matches('[data-qty-input]')){let n=parseInt(e.target.value)||1;if(n<1)n=1;if(n>999)n=999;e.target.value=n;refresh();}});
   document.getElementById('waBtn').addEventListener('click',()=>{
-    const lines=[...document.querySelectorAll('.customer-card')].map(card=>{
-      const name=card.querySelector('h2')?.textContent?.trim()||'Pez';
-      const qty=Math.max(1,Math.min(999,parseInt(card.querySelector('[data-qty-input]')?.value)||1));
-      return '🐟 ' + name + ' x' + qty;
+    const cards=[...document.querySelectorAll('.customer-card')];
+    const lines=[];
+    let total=0;
+    cards.forEach(card=>{
+      const name=card.dataset.customerName||'Pez';
+      const price=Number(card.dataset.customerPrice||0);
+      const input=card.querySelector('[data-qty-input]');
+      const qty=Math.max(1,Math.min(999,parseInt(input?.value)||1));
+      const subtotal=price*qty;
+      total+=subtotal;
+      const precioTexto=price>0 ? ' · $'+price.toLocaleString('es-CO')+' c/u · Subtotal $'+subtotal.toLocaleString('es-CO') : '';
+      lines.push('🐟 '+name+' — '+qty+' unidad'+(qty===1?'':'es')+precioTexto);
     });
-    const text="Hola, estoy interesado en estas especies del catálogo " + ${JSON.stringify(nombre)} + ":\\n\\n" + lines.join("\\n") + "\\n\\n¿Me pueden indicar disponibilidad y precio?";
+    const totalTexto=total>0 ? '\n\n💰 Total estimado: $'+total.toLocaleString('es-CO') : '';
+    const text="Hola, estoy interesado en estas especies del catálogo " + ${JSON.stringify(nombre)} + ":\n\n" + lines.join("\n") + totalTexto + "\n\n¿Me pueden confirmar la disponibilidad de estas especies?\n\n*Los precios mostrados son los del catálogo y pueden estar sujetos a actualización.*";
     window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
   });
   document.getElementById('printBtn').addEventListener('click',()=>window.print());refresh();
