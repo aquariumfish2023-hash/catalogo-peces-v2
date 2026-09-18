@@ -291,21 +291,21 @@ onAuthStateChanged(auth,user=>{
     if(user){
       usuarioActual=user;
       vistaInterna=true;
-      $("loginScreen").classList.add("hidden");
-      $("app").classList.remove("hidden");
+      $("loginScreen")?.classList.add("hidden");
+      $("app")?.classList.remove("hidden");
       if(!unsubscribeCatalogo) iniciarSuscripcion(true);
     }else{
       usuarioActual=null;
-      $("loginScreen").classList.remove("hidden");
-      $("app").classList.add("hidden");
+      $("loginScreen")?.classList.remove("hidden");
+      $("app")?.classList.add("hidden");
       if(unsubscribeCatalogo){unsubscribeCatalogo();unsubscribeCatalogo=null}
       catalogo=[]; render();
     }
   }else{
     usuarioActual=user||null;
     vistaInterna=false;
-    $("loginScreen").classList.add("hidden");
-    $("app").classList.remove("hidden");
+    $("loginScreen")?.classList.add("hidden");
+    $("app")?.classList.remove("hidden");
     if(!unsubscribeCatalogo) iniciarSuscripcion(false);
   }
 });
