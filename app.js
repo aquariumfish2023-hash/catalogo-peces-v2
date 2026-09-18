@@ -1066,41 +1066,80 @@ function abrirSeleccionCliente(){
     banner("Todavía no has seleccionado peces. Pulsa “＋ Me interesa” en las especies que te gusten.","info");
     return;
   }
-  const nombre=escapeHtml($("storeName")?.value?.trim()||"AQUARIUMFISH");
+  const nombreTexto=$("storeName")?.value?.trim()||"AQUARIUMFISH";
+  const nombre=escapeHtml(nombreTexto);
   const logoUrl=new URL("./logo-empresa.jpg",window.location.href).href;
   const cards=peces.map((p,i)=>htmlCliente(p,i)).join("");
   const total=totalUnidadesCliente(peces);
   const w=window.open("","_blank");
   if(!w){banner("El navegador bloqueó la ventana. Permite ventanas emergentes para ver tu selección.","error");return;}
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${nombre} · Mi selección</title><style>
-  *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7f6;color:#173a3b}.wrap{max-width:980px;margin:auto;padding:16px}.toolbar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:9px;padding:4px 0 14px;flex-wrap:wrap}.toolbar button,.toolbar a{border:0;border-radius:12px;padding:12px 17px;font-weight:700;cursor:pointer;font-size:14px;text-decoration:none}.wa-btn{background:#1d7a55;color:#fff}.print-btn{background:#0e2a2b;color:#fff}.close-btn{background:#e8f1ef;color:#173a3b}.wa-btn{background:#25d366;color:#fff}.cover{text-align:center;background:#0e2a2b;color:#fff;border-radius:22px;padding:26px 18px;margin-bottom:16px}.cover img{width:min(220px,68vw);max-height:150px;object-fit:contain;border-radius:14px;margin-bottom:8px}.cover h1{margin:4px 0;font-size:28px}.cover p{margin:6px 0;color:#cce2de}.summary{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 17px}.summary span{background:#fff;border:1px solid #dce8e5;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}.customer-card{background:#fff;border:1px solid #dce8e5;border-radius:18px;overflow:hidden;display:grid;grid-template-columns:150px 1fr;min-height:190px;box-shadow:0 5px 18px rgba(14,42,43,.07)}.customer-photo{background:#e8f1ef;min-height:190px}.customer-photo img{width:100%;height:100%;object-fit:cover}.no-photo{height:100%;display:grid;place-items:center;font-size:55px}.customer-info{padding:17px}.customer-number{font-size:10px;color:#8aa5a0;letter-spacing:2px}.customer-info h2{margin:3px 0;font-size:20px}.customer-info em{color:#63807b;font-size:12px}.customer-badges{display:flex;gap:5px;flex-wrap:wrap;margin:11px 0}.customer-badges span{font-size:10px;padding:5px 8px;border-radius:20px;background:#edf5f3}.customer-meta{font-size:11px;color:#5d7470;margin-top:5px}.customer-price{font-size:20px;font-weight:800;margin-top:11px}.request-line{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:15px;font-size:12px;font-weight:700}.qty-control{display:flex;align-items:center;border:1px solid #b7cbc6;border-radius:10px;overflow:hidden;background:#fff}.qty-control button{width:32px;height:32px;border:0;background:#edf5f3;color:#173a3b;font-size:20px;font-weight:700;cursor:pointer}.qty-control input{width:52px;height:32px;border:0;border-left:1px solid #dce8e5;border-right:1px solid #dce8e5;text-align:center;font-weight:800;font-size:14px;outline:none}.clear-all{background:#f4e9e6;color:#8b4c40}.footer{text-align:center;color:#78908b;font-size:11px;margin-top:22px}.note{text-align:center;font-size:12px;color:#617b76;margin:4px 0 20px}@media print{body{background:#fff}.wrap{padding:0}.toolbar{display:none}.cover{break-after:page}.customer-card{box-shadow:none;break-inside:avoid}.grid{display:grid;grid-template-columns:1fr 1fr}.qty-control button{display:none}.qty-control input{border:1px solid #9bb2ad;border-radius:6px;width:60px}.footer{margin-top:15px}}@media(max-width:600px){.wrap{padding:12px}.customer-card{grid-template-columns:105px 1fr}.customer-photo{min-height:160px}.customer-info{padding:13px}.cover{padding:22px 14px}.toolbar{position:static}.request-line{align-items:flex-start;flex-direction:column;gap:7px}}
-  </style></head><body><div class="wrap"><div class="toolbar"><button class="wa-btn" id="waBtn" type="button">💬 Solicitar por WhatsApp</button><button class="print-btn" id="printBtn">🖨️ Imprimir / Guardar PDF</button><button class="clear-all" id="clearAll">🗑 Vaciar selección</button><button class="close-btn" onclick="window.close()">✕ Cerrar</button></div><section class="cover"><img src="${logoUrl}" alt="${nombre}"><h1>❤️ Mi selección</h1><p>Mis peces de interés · Agua dulce</p><p id="speciesSummary">${peces.length} especie${peces.length===1?"":"s"} · ${total} unidad${total===1?"":"es"}</p></section><div class="summary"><span>🐟 Especies: <b id="speciesCount">${peces.length}</b></span><span>🔢 Unidades: <b id="unitsCount">${total}</b></span></div><p class="note">Puedes indicar cuántos ejemplares te interesan y enviar la selección por WhatsApp.</p><section class="grid" id="customerGrid">${cards}</section><div class="footer">Fecha: ${new Date().toLocaleDateString("es-CO")} · ${nombre}</div></div><script>
-  const totalUnits=()=>[...document.querySelectorAll('[data-qty-input]')].reduce((s,i)=>s+Math.max(1,Math.min(999,parseInt(i.value)||1)),0);
-  function refresh(){document.getElementById('unitsCount').textContent=totalUnits();document.getElementById('speciesCount').textContent=document.querySelectorAll('.customer-card').length;}
-  document.addEventListener('click',e=>{const plus=e.target.closest('[data-qty-plus]');const minus=e.target.closest('[data-qty-minus]');if(plus||minus){const id=(plus||minus).dataset.qtyPlus||(plus||minus).dataset.qtyMinus;const input=document.querySelector('[data-qty-input="'+CSS.escape(id)+'"]');if(!input)return;let n=parseInt(input.value)||1;n=plus?Math.min(999,n+1):Math.max(1,n-1);input.value=n;refresh();return;}if(e.target.id==='clearAll'){try{window.opener?.postMessage({type:'clear-client-selection'},'*')}catch{};document.getElementById('customerGrid').innerHTML='<p style="grid-column:1/-1;text-align:center;padding:30px">Selección vacía.</p>';return;}});
-  document.addEventListener('input',e=>{if(e.target.matches('[data-qty-input]')){let n=parseInt(e.target.value)||1;if(n<1)n=1;if(n>999)n=999;e.target.value=n;refresh();}});
-  document.getElementById('waBtn').addEventListener('click',()=>{
-    const cards=[...document.querySelectorAll('.customer-card')];
-    const lines=[];
-    let total=0;
-    cards.forEach(card=>{
+  const safeName=JSON.stringify(nombreTexto);
+  const html=`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${nombre} · Mi selección</title><style>
+  *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7f6;color:#173a3b}.wrap{max-width:980px;margin:auto;padding:16px}.toolbar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:9px;padding:4px 0 14px;flex-wrap:wrap}.toolbar button{border:0;border-radius:12px;padding:12px 17px;font-weight:700;cursor:pointer;font-size:14px}.wa-btn{background:#25d366;color:#fff}.print-btn{background:#0e2a2b;color:#fff}.close-btn{background:#e8f1ef;color:#173a3b}.clear-all{background:#f4e9e6;color:#8b4c40}.cover{text-align:center;background:#0e2a2b;color:#fff;border-radius:22px;padding:26px 18px;margin-bottom:16px}.cover img{width:min(220px,68vw);max-height:150px;object-fit:contain;border-radius:14px;margin-bottom:8px}.cover h1{margin:4px 0;font-size:28px}.cover p{margin:6px 0;color:#cce2de}.summary{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 17px}.summary span{background:#fff;border:1px solid #dce8e5;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}.customer-card{background:#fff;border:1px solid #dce8e5;border-radius:18px;overflow:hidden;display:grid;grid-template-columns:150px 1fr;min-height:190px;box-shadow:0 5px 18px rgba(14,42,43,.07)}.customer-photo{background:#e8f1ef;min-height:190px}.customer-photo img{width:100%;height:100%;object-fit:cover}.no-photo{height:100%;display:grid;place-items:center;font-size:55px}.customer-info{padding:17px}.customer-number{font-size:10px;color:#8aa5a0;letter-spacing:2px}.customer-info h2{margin:3px 0;font-size:20px}.customer-info em{color:#63807b;font-size:12px}.customer-badges{display:flex;gap:5px;flex-wrap:wrap;margin:11px 0}.customer-badges span{font-size:10px;padding:5px 8px;border-radius:20px;background:#edf5f3}.customer-meta{font-size:11px;color:#5d7470;margin-top:5px}.customer-price{font-size:20px;font-weight:800;margin-top:11px}.request-line{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:15px;font-size:12px;font-weight:700}.qty-control{display:flex;align-items:center;border:1px solid #b7cbc6;border-radius:10px;overflow:hidden;background:#fff}.qty-control button{width:32px;height:32px;border:0;background:#edf5f3;color:#173a3b;font-size:20px;font-weight:700;cursor:pointer}.qty-control input{width:52px;height:32px;border:0;border-left:1px solid #dce8e5;border-right:1px solid #dce8e5;text-align:center;font-weight:800;font-size:14px;outline:none}.footer{text-align:center;color:#78908b;font-size:11px;margin-top:22px}.note{text-align:center;font-size:12px;color:#617b76;margin:4px 0 20px}@media print{body{background:#fff}.wrap{padding:0}.toolbar{display:none}.cover{break-after:page}.customer-card{box-shadow:none;break-inside:avoid}.grid{display:grid;grid-template-columns:1fr 1fr}.qty-control button{display:none}.qty-control input{border:1px solid #9bb2ad;border-radius:6px;width:60px}.footer{margin-top:15px}}@media(max-width:600px){.wrap{padding:12px}.customer-card{grid-template-columns:105px 1fr}.customer-photo{min-height:160px}.customer-info{padding:13px}.cover{padding:22px 14px}.toolbar{position:static}.request-line{align-items:flex-start;flex-direction:column;gap:7px}}
+  </style></head><body><div class="wrap"><div class="toolbar"><button class="wa-btn" id="waBtn" type="button">💬 Solicitar por WhatsApp</button><button class="print-btn" id="printBtn" type="button">🖨️ Imprimir / Guardar PDF</button><button class="clear-all" id="clearAll" type="button">🗑 Vaciar selección</button><button class="close-btn" id="closeBtn" type="button">✕ Cerrar</button></div><section class="cover"><img src="${logoUrl}" alt="${nombre}"><h1>❤️ Mi selección</h1><p>Mis peces de interés · Agua dulce</p><p id="speciesSummary">${peces.length} especie${peces.length===1?"":"s"} · ${total} unidad${total===1?"":"es"}</p></section><div class="summary"><span>🐟 Especies: <b id="speciesCount">${peces.length}</b></span><span>🔢 Unidades: <b id="unitsCount">${total}</b></span></div><p class="note">Puedes indicar cuántos ejemplares te interesan y enviar la selección por WhatsApp.</p><section class="grid" id="customerGrid">${cards}</section><div class="footer">Fecha: ${new Date().toLocaleDateString("es-CO")} · ${nombre}</div></div></body></html>`;
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+
+  const doc=w.document;
+  const refresh=()=>{
+    const inputs=[...doc.querySelectorAll('[data-qty-input]')];
+    const units=inputs.reduce((sum,input)=>sum+Math.max(1,Math.min(999,parseInt(input.value)||1)),0);
+    const unitsEl=doc.getElementById('unitsCount');
+    const speciesEl=doc.getElementById('speciesCount');
+    const summaryEl=doc.getElementById('speciesSummary');
+    if(unitsEl) unitsEl.textContent=String(units);
+    const species=doc.querySelectorAll('.customer-card').length;
+    if(speciesEl) speciesEl.textContent=String(species);
+    if(summaryEl) summaryEl.textContent=species+' especie'+(species===1?'':'s')+' · '+units+' unidad'+(units===1?'':'es');
+  };
+  doc.addEventListener('click',e=>{
+    const plus=e.target.closest('[data-qty-plus]');
+    const minus=e.target.closest('[data-qty-minus]');
+    if(plus||minus){
+      const id=(plus||minus).dataset.qtyPlus||(plus||minus).dataset.qtyMinus;
+      const input=[...doc.querySelectorAll('[data-qty-input]')].find(el=>el.dataset.qtyInput===id);
+      if(input){let n=parseInt(input.value)||1;n=plus?Math.min(999,n+1):Math.max(1,n-1);input.value=n;refresh();}
+      return;
+    }
+    if(e.target.closest('#printBtn')){w.print();return;}
+    if(e.target.closest('#closeBtn')){w.close();return;}
+    if(e.target.closest('#clearAll')){
+      try{window.postMessage({type:'clear-client-selection'},'*');}catch{}
+      try{w.opener?.postMessage({type:'clear-client-selection'},'*');}catch{}
+      seleccionadosCliente.clear();
+      cantidadesCliente.clear();
+      guardarSetLocal(CLIENT_SELECTION_KEY,seleccionadosCliente);
+      actualizarListaClienteUI();
+      render();
+      const grid=doc.getElementById('customerGrid');
+      if(grid)grid.innerHTML='<p style="grid-column:1/-1;text-align:center;padding:30px">Selección vacía.</p>';
+      refresh();
+      return;
+    }
+  });
+  doc.addEventListener('input',e=>{
+    if(e.target.matches('[data-qty-input]')){let n=parseInt(e.target.value)||1;if(n<1)n=1;if(n>999)n=999;e.target.value=n;refresh();}
+  });
+  doc.getElementById('waBtn')?.addEventListener('click',()=>{
+    const currentCards=[...doc.querySelectorAll('.customer-card')];
+    const lines=[];let totalPedido=0;
+    currentCards.forEach(card=>{
       const name=card.dataset.customerName||'Pez';
       const price=Number(card.dataset.customerPrice||0);
       const input=card.querySelector('[data-qty-input]');
       const qty=Math.max(1,Math.min(999,parseInt(input?.value)||1));
-      const subtotal=price*qty;
-      total+=subtotal;
-      const precioTexto=price>0 ? ' · $'+price.toLocaleString('es-CO')+' c/u · Subtotal $'+subtotal.toLocaleString('es-CO') : '';
+      const subtotal=price*qty;totalPedido+=subtotal;
+      const precioTexto=price>0?' · $'+price.toLocaleString('es-CO')+' c/u · Subtotal $'+subtotal.toLocaleString('es-CO'):'';
       lines.push('🐟 '+name+' — '+qty+' unidad'+(qty===1?'':'es')+precioTexto);
     });
-    const totalTexto=total>0 ? '\n\n💰 Total estimado: $'+total.toLocaleString('es-CO') : '';
-    const text="Hola, estoy interesado en estas especies del catálogo " + ${JSON.stringify(nombre)} + ":\n\n" + lines.join("\n") + totalTexto + "\n\n¿Me pueden confirmar la disponibilidad de estas especies?\n\n*Los precios mostrados son los del catálogo y pueden estar sujetos a actualización.*";
-    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+    const totalTexto=totalPedido>0?'\n\n💰 Total estimado: $'+totalPedido.toLocaleString('es-CO'):'';
+    const text='Hola, estoy interesado en estas especies del catálogo '+safeName+':\n\n'+lines.join('\n')+totalTexto+'\n\n¿Me pueden confirmar la disponibilidad de estas especies?\n\n*Los precios mostrados son los del catálogo y pueden estar sujetos a actualización.*';
+    w.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
   });
-  document.getElementById('printBtn').addEventListener('click',()=>window.print());refresh();
-  <\/script></body></html>`);
-  w.document.close();
+  refresh();
 }
+
 function abrirListaCliente(){
   const peces=[...seleccionadosCliente].map(id=>catalogo.find(p=>p.id===id)).filter(Boolean);
   if(!peces.length){banner("Selecciona al menos un pez para crear la lista de cliente.","error");return;}
