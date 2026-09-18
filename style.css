@@ -183,3 +183,18 @@ body.modal-open{overflow:hidden}
 
 /* Lista de catálogo para clientes */
 .customer-catalog-btn{border:1px solid #c97b3d;background:#fff7ef;color:#a75e27;border-radius:10px;padding:8px 11px;font-size:11px;font-weight:800;cursor:pointer}.customer-catalog-btn.has-selection{background:#c97b3d;color:#fff}.entry-actions-top{display:flex;align-items:center;gap:6px}.customer-select{display:flex;align-items:center;gap:3px;font-size:8px;color:#7b928e;cursor:pointer;user-select:none}.customer-select input{accent-color:#c97b3d;width:15px;height:15px;margin:0}.results-actions{display:flex;gap:7px;flex-wrap:wrap}
+
+/* Etapa Experiencia Cliente 1.0 */
+.client-interest-btn{border:1px solid #d8e4e2;background:#fff;color:#285654;border-radius:999px;padding:6px 9px;font-size:10px;font-weight:800;white-space:nowrap}
+.client-interest-btn:hover{background:#eef7f5}
+.client-interest-btn.active{background:#e7f5ef;border-color:#86b9a6;color:#21654d}
+.favorite-btn{transition:transform .15s,background .15s}
+.favorite-btn.active{background:#fff5dc;border-radius:999px}
+.detail-action.client-interest-detail{border-color:#86b9a6;background:#e7f5ef;color:#21654d}
+.detail-action.client-interest-detail.active{background:#dff1e8}
+.results-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#customerCatalogBtn.has-selection{box-shadow:0 4px 14px rgba(39,116,91,.15)}
+@media(max-width:640px){
+  .entry-right{min-width:0}
+  .client-interest-btn{font-size:9px;padding:6px 8px}
+}

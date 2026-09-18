@@ -227,7 +227,7 @@ const MAX_FIRESTORE_IMAGE_BYTES = 500 * 1024;
 
 let catalogo=[], busqueda="", filtroZona=null, filtroCuidado=null, soloFavoritos=false;
 let filtroFamilia="", filtroTemperamento="", filtroTamano="", filtroTemp="", filtroPh="", filtroAcuario="";
-let expandido=null, vistaInterna=true, editando=null, fotoTemp=null, seleccionadosCliente=new Set();
+let expandido=null, vistaInterna=true, editando=null, fotoTemp=null;
 const paramsPublicos=new URLSearchParams(window.location.search);
 const esPaginaAdmin=window.location.pathname.endsWith("/admin.html") || window.location.pathname.endsWith("admin.html");
 const accesoAdmin=esPaginaAdmin || paramsPublicos.get("admin")==="1";
@@ -247,7 +247,20 @@ if(!accesoAdmin){
     if(hint) hint.textContent="Modo cliente · catálogo público";
   });
 }
+const CLIENT_SELECTION_KEY="catalogoPecesV2_cliente_seleccionados";
+const CLIENT_FAVORITES_KEY="catalogoPecesV2_cliente_favoritos";
+function cargarSetLocal(key){
+  try{
+    const raw=JSON.parse(localStorage.getItem(key)||"[]");
+    return new Set(Array.isArray(raw)?raw.map(String):[]);
+  }catch{return new Set();}
+}
+function guardarSetLocal(key,set){
+  try{localStorage.setItem(key,JSON.stringify([...set]));}catch{}
+}
 let cantidadesCliente=new Map();
+let seleccionadosCliente=cargarSetLocal(CLIENT_SELECTION_KEY);
+let favoritosCliente=cargarSetLocal(CLIENT_FAVORITES_KEY);
 let guardando=false, usuarioActual=null, unsubscribeCatalogo=null;
 
 function setStoreName(value){
@@ -415,7 +428,7 @@ function filtradosActuales(){
       const litros=Number(filtroAcuario);
       if(!Number.isFinite(litros) || Number(p.acuarioMinL)>litros)return false;
     }
-    if(soloFavoritos&&!p.favorito)return false;
+    if(soloFavoritos&&!(vistaInterna ? p.favorito : favoritosCliente.has(String(p.id))))return false;
     return true;
   });
 }
@@ -504,7 +517,8 @@ function render(){
   const filtrados=filtradosActuales();
   if($("toggleView")) $("toggleView").textContent=vistaInterna?"👁 Modo cliente":"🔐 Modo administración";
   const customerBtn=$("customerCatalogBtn");
-  if(customerBtn) customerBtn.style.display=vistaInterna?"none":"";
+  if(customerBtn) customerBtn.style.display="";
+  actualizarListaClienteUI();
   $("countRow").textContent=`${filtrados.length} ${filtrados.length===1?"especie":"especies"} mostradas`;
   $("totalCount").textContent=catalogo.length;
   $("familyCount").textContent=new Set(catalogo.map(p=>String(p.familia||"").trim().toLowerCase()).filter(Boolean)).size;
@@ -542,7 +556,7 @@ function entryHtml(p,i){
           <span class="badge" style="color:${cuidado.color};border-color:${cuidado.color}">${cuidado.label}</span>
         </div>
       </div>
-      <div class="entry-right"><div class="entry-actions-top">${!vistaInterna?`<label class="customer-select" title="Agregar a lista para cliente"><input type="checkbox" data-customer-select="${p.id}" ${seleccionadosCliente.has(p.id)?"checked":""}><span>Cliente</span></label>`:""}<button type="button" class="favorite-btn ${p.favorito?"active":""}" data-favorite="${p.id}" title="${p.favorito?"Quitar de favoritos":"Agregar a favoritos"}" aria-label="${p.favorito?"Quitar de favoritos":"Agregar de favoritos"}">${p.favorito?"★":"☆"}</button></div>${price}<span class="chevron ${open?"open":""}">▾</span></div>
+      <div class="entry-right"><div class="entry-actions-top">${!vistaInterna?`<button type="button" class="client-interest-btn ${seleccionadosCliente.has(String(p.id))?"active":""}" data-client-select="${p.id}" title="${seleccionadosCliente.has(String(p.id))?"Quitar de mi selección":"Agregar a mi selección"}">${seleccionadosCliente.has(String(p.id))?"✓ Me interesa":"＋ Me interesa"}</button>`:""}<button type="button" class="favorite-btn ${(vistaInterna?p.favorito:favoritosCliente.has(String(p.id)))?"active":""}" data-favorite="${p.id}" title="${p.favorito?"Quitar de favoritos":"Agregar a favoritos"}" aria-label="${p.favorito?"Quitar de favoritos":"Agregar de favoritos"}">${p.favorito?"★":"☆"}</button></div>${price}<span class="chevron ${open?"open":""}">▾</span></div>
     </div>
     ${open?detailHtml(p):""}
   </article>`;
@@ -608,8 +622,10 @@ function detailModalHtml(p){
   const thumbs=p.foto?`<div class="detail-thumb active">${photo.replace('class="detail-hero-photo"','class="detail-thumb-img"')}</div>`:"";
   const internal=vistaInterna;
   const price=p.precio!=null&&p.precio!==""?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"<div class=\"price-big\">Consultar</div>";
-  const favoriteAction=`<button class="detail-action favorite-detail ${p.favorito?"active":""}" data-detail-favorite="${p.id}">${p.favorito?"★ Quitar de favoritos":"☆ Agregar a favoritos"}</button>`;
-  const actions=internal?`${favoriteAction}<button class="detail-action duplicate" data-detail-duplicate="${p.id}">📋 Duplicar ficha</button><button class="detail-action edit" data-detail-edit="${p.id}">✎ Editar</button><button class="detail-action danger" data-detail-delete="${p.id}">🗑 Eliminar</button>`:favoriteAction;
+  const esFav=internal ? Boolean(p.favorito) : favoritosCliente.has(String(p.id));
+  const favoriteAction=`<button class="detail-action favorite-detail ${esFav?"active":""}" data-detail-favorite="${p.id}">${esFav?"★ Quitar de favoritos":"☆ Agregar a favoritos"}</button>`;
+  const interestAction=!internal?`<button class="detail-action client-interest-detail ${seleccionadosCliente.has(String(p.id))?"active":""}" data-detail-select="${p.id}">${seleccionadosCliente.has(String(p.id))?"✓ Quitar de mi selección":"＋ Me interesa"}</button>`:"";
+  const actions=internal?`${favoriteAction}<button class="detail-action duplicate" data-detail-duplicate="${p.id}">📋 Duplicar ficha</button><button class="detail-action edit" data-detail-edit="${p.id}">✎ Editar</button><button class="detail-action danger" data-detail-delete="${p.id}">🗑 Eliminar</button>`:`${favoriteAction}${interestAction}`;
   const vars=String(p.variedades||"").split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);
   return `<div class="detail-hero">
       <div class="detail-gallery"><div class="detail-main-photo">${photo}</div>${vars.length?`<div class="detail-variety-row">${vars.map(v=>`<span>${escapeHtml(v)}</span>`).join("")}</div>`:""}${thumbs?`<div class="detail-thumbs">${thumbs}</div>`:""}</div>
@@ -833,6 +849,26 @@ $("detailBackBtn").addEventListener("click",closeDetailModal);
 $("detailOverlay").addEventListener("click",e=>{if(e.target.id==="detailOverlay")closeDetailModal()});
 $("detailShareBtn").addEventListener("click",()=>{const id=document.querySelector("[data-detail-share]")?.dataset.detailShare;const p=catalogo.find(x=>x.id===id);if(p)sharePez(p)});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("detailOverlay").classList.contains("hidden"))closeDetailModal()});
+document.body.addEventListener("click",e=>{
+  const btn=e.target.closest("[data-client-select]");
+  if(btn){
+    e.stopPropagation();
+    actualizarSeleccionCliente(btn.dataset.clientSelect);
+    return;
+  }
+  const detailBtn=e.target.closest("[data-detail-select]");
+  if(detailBtn){
+    actualizarSeleccionCliente(detailBtn.dataset.detailSelect);
+    if(seleccionadosCliente.has(String(detailBtn.dataset.detailSelect))){
+      banner("Agregado a tu selección.","success");
+    }else{
+      banner("Quitado de tu selección.","success");
+    }
+    openDetailModal(detailBtn.dataset.detailSelect);
+    return;
+  }
+});
+
 document.body.addEventListener("change",e=>{
   const input=e.target.closest("input[data-customer-select]");
   if(!input)return;
@@ -908,6 +944,14 @@ $("clearSearch").addEventListener("click",()=>{$("searchInput").value="";busqued
 async function toggleFavorito(id){
   const pez=catalogo.find(p=>p.id===id);
   if(!pez)return;
+  const key=String(id);
+  if(!vistaInterna){
+    if(favoritosCliente.has(key)){favoritosCliente.delete(key);banner("Quitado de tus favoritos.","success");}
+    else{favoritosCliente.add(key);banner("Agregado a tus favoritos.","success");}
+    guardarSetLocal(CLIENT_FAVORITES_KEY,favoritosCliente);
+    render();
+    return;
+  }
   try{
     await updateDoc(doc(db,"peces",id),{favorito:!Boolean(pez.favorito)});
     banner(pez.favorito?"Quitado de favoritos.":"Agregado a favoritos.","success");
@@ -981,7 +1025,22 @@ function actualizarListaClienteUI(){
   const btn=$("customerCatalogBtn");
   const count=$("selectedCount");
   if(count)count.textContent=n;
-  if(btn){btn.classList.toggle("has-selection",n>0);btn.textContent=`📋 Lista cliente ${n?`(${n})`:`(0)`}`;}
+  if(btn){
+    btn.classList.toggle("has-selection",n>0);
+    btn.textContent=vistaInterna
+      ? `📋 Lista cliente ${n?`(${n})`:`(0)`}`
+      : `❤️ Mi selección${n?` (${n})`:""}`;
+    btn.setAttribute("aria-label",vistaInterna?"Crear lista de cliente":"Ver mis peces seleccionados");
+  }
+}
+function actualizarSeleccionCliente(id,forzar){
+  const key=String(id);
+  const agregar=typeof forzar==="boolean"?forzar:!seleccionadosCliente.has(key);
+  if(agregar)seleccionadosCliente.add(key); else seleccionadosCliente.delete(key);
+  if(!agregar)cantidadesCliente.delete(key);
+  guardarSetLocal(CLIENT_SELECTION_KEY,seleccionadosCliente);
+  actualizarListaClienteUI();
+  render();
 }
 function cantidadCliente(id){
   const n=Number(cantidadesCliente.get(id)||1);
@@ -1000,6 +1059,38 @@ function htmlCliente(p,index){
   const ph=(p.phMin!=null||p.phMax!=null)?`${p.phMin??"—"}–${p.phMax??"—"}`:"Consultar";
   const cantidad=cantidadCliente(p.id);
   return `<article class="customer-card"><div class="customer-photo">${foto}</div><div class="customer-info"><div class="customer-number">${String(index+1).padStart(2,"0")}</div><h2>${escapeHtml(p.nombreComun||"Sin nombre")}</h2><em>${escapeHtml(p.nombreCientifico||"")}</em><div class="customer-badges"><span>${cuidado}</span><span>${temp}</span><span>pH ${ph}</span></div>${p.tamanoCm!=null?`<div class="customer-meta">Tamaño adulto: ${escapeHtml(p.tamanoCm)} cm</div>`:""}${p.origen?`<div class="customer-meta">Origen: ${escapeHtml(p.origen)}</div>`:""}${precio}<div class="request-line"><span>Cantidad solicitada:</span><div class="qty-control"><button type="button" data-qty-minus="${escapeHtml(p.id)}" aria-label="Disminuir cantidad">−</button><input type="number" min="1" max="999" value="${cantidad}" data-qty-input="${escapeHtml(p.id)}" aria-label="Cantidad de ${escapeHtml(p.nombreComun||"pez")}"><button type="button" data-qty-plus="${escapeHtml(p.id)}" aria-label="Aumentar cantidad">+</button></div></div></div></article>`;
+}
+function abrirSeleccionCliente(){
+  const peces=[...seleccionadosCliente].map(id=>catalogo.find(p=>p.id===id)).filter(Boolean);
+  if(!peces.length){
+    banner("Todavía no has seleccionado peces. Pulsa “＋ Me interesa” en las especies que te gusten.","info");
+    return;
+  }
+  const nombre=escapeHtml($("storeName")?.value?.trim()||"AQUARIUMFISH");
+  const logoUrl=new URL("./logo-empresa.jpg",window.location.href).href;
+  const cards=peces.map((p,i)=>htmlCliente(p,i)).join("");
+  const total=totalUnidadesCliente(peces);
+  const w=window.open("","_blank");
+  if(!w){banner("El navegador bloqueó la ventana. Permite ventanas emergentes para ver tu selección.","error");return;}
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${nombre} · Mi selección</title><style>
+  *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7f6;color:#173a3b}.wrap{max-width:980px;margin:auto;padding:16px}.toolbar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:9px;padding:4px 0 14px;flex-wrap:wrap}.toolbar button,.toolbar a{border:0;border-radius:12px;padding:12px 17px;font-weight:700;cursor:pointer;font-size:14px;text-decoration:none}.wa-btn{background:#1d7a55;color:#fff}.print-btn{background:#0e2a2b;color:#fff}.close-btn{background:#e8f1ef;color:#173a3b}.cover{text-align:center;background:#0e2a2b;color:#fff;border-radius:22px;padding:26px 18px;margin-bottom:16px}.cover img{width:min(220px,68vw);max-height:150px;object-fit:contain;border-radius:14px;margin-bottom:8px}.cover h1{margin:4px 0;font-size:28px}.cover p{margin:6px 0;color:#cce2de}.summary{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 17px}.summary span{background:#fff;border:1px solid #dce8e5;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}.customer-card{background:#fff;border:1px solid #dce8e5;border-radius:18px;overflow:hidden;display:grid;grid-template-columns:150px 1fr;min-height:190px;box-shadow:0 5px 18px rgba(14,42,43,.07)}.customer-photo{background:#e8f1ef;min-height:190px}.customer-photo img{width:100%;height:100%;object-fit:cover}.no-photo{height:100%;display:grid;place-items:center;font-size:55px}.customer-info{padding:17px}.customer-number{font-size:10px;color:#8aa5a0;letter-spacing:2px}.customer-info h2{margin:3px 0;font-size:20px}.customer-info em{color:#63807b;font-size:12px}.customer-badges{display:flex;gap:5px;flex-wrap:wrap;margin:11px 0}.customer-badges span{font-size:10px;padding:5px 8px;border-radius:20px;background:#edf5f3}.customer-meta{font-size:11px;color:#5d7470;margin-top:5px}.customer-price{font-size:20px;font-weight:800;margin-top:11px}.request-line{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:15px;font-size:12px;font-weight:700}.qty-control{display:flex;align-items:center;border:1px solid #b7cbc6;border-radius:10px;overflow:hidden;background:#fff}.qty-control button{width:32px;height:32px;border:0;background:#edf5f3;color:#173a3b;font-size:20px;font-weight:700;cursor:pointer}.qty-control input{width:52px;height:32px;border:0;border-left:1px solid #dce8e5;border-right:1px solid #dce8e5;text-align:center;font-weight:800;font-size:14px;outline:none}.clear-all{background:#f4e9e6;color:#8b4c40}.footer{text-align:center;color:#78908b;font-size:11px;margin-top:22px}.note{text-align:center;font-size:12px;color:#617b76;margin:4px 0 20px}@media print{body{background:#fff}.wrap{padding:0}.toolbar{display:none}.cover{break-after:page}.customer-card{box-shadow:none;break-inside:avoid}.grid{display:grid;grid-template-columns:1fr 1fr}.qty-control button{display:none}.qty-control input{border:1px solid #9bb2ad;border-radius:6px;width:60px}.footer{margin-top:15px}}@media(max-width:600px){.wrap{padding:12px}.customer-card{grid-template-columns:105px 1fr}.customer-photo{min-height:160px}.customer-info{padding:13px}.cover{padding:22px 14px}.toolbar{position:static}.request-line{align-items:flex-start;flex-direction:column;gap:7px}}
+  </style></head><body><div class="wrap"><div class="toolbar"><button class="wa-btn" id="waBtn" type="button">💬 Solicitar por WhatsApp</button><button class="print-btn" id="printBtn">🖨️ Imprimir / Guardar PDF</button><button class="clear-all" id="clearAll">🗑 Vaciar selección</button><button class="close-btn" onclick="window.close()">✕ Cerrar</button></div><section class="cover"><img src="${logoUrl}" alt="${nombre}"><h1>❤️ Mi selección</h1><p>Mis peces de interés · Agua dulce</p><p id="speciesSummary">${peces.length} especie${peces.length===1?"":"s"} · ${total} unidad${total===1?"":"es"}</p></section><div class="summary"><span>🐟 Especies: <b id="speciesCount">${peces.length}</b></span><span>🔢 Unidades: <b id="unitsCount">${total}</b></span></div><p class="note">Puedes indicar cuántos ejemplares te interesan y enviar la selección por WhatsApp.</p><section class="grid" id="customerGrid">${cards}</section><div class="footer">Fecha: ${new Date().toLocaleDateString("es-CO")} · ${nombre}</div></div><script>
+  const totalUnits=()=>[...document.querySelectorAll('[data-qty-input]')].reduce((s,i)=>s+Math.max(1,Math.min(999,parseInt(i.value)||1)),0);
+  function refresh(){document.getElementById('unitsCount').textContent=totalUnits();document.getElementById('speciesCount').textContent=document.querySelectorAll('.customer-card').length;}
+  document.addEventListener('click',e=>{const plus=e.target.closest('[data-qty-plus]');const minus=e.target.closest('[data-qty-minus]');if(plus||minus){const id=(plus||minus).dataset.qtyPlus||(plus||minus).dataset.qtyMinus;const input=document.querySelector('[data-qty-input="'+CSS.escape(id)+'"]');if(!input)return;let n=parseInt(input.value)||1;n=plus?Math.min(999,n+1):Math.max(1,n-1);input.value=n;refresh();return;}if(e.target.id==='clearAll'){try{window.opener?.postMessage({type:'clear-client-selection'},'*')}catch{};document.getElementById('customerGrid').innerHTML='<p style="grid-column:1/-1;text-align:center;padding:30px">Selección vacía.</p>';return;}});
+  document.addEventListener('input',e=>{if(e.target.matches('[data-qty-input]')){let n=parseInt(e.target.value)||1;if(n<1)n=1;if(n>999)n=999;e.target.value=n;refresh();}});
+  document.getElementById('waBtn').addEventListener('click',()=>{
+    const lines=[...document.querySelectorAll('.customer-card')].map(card=>{
+      const name=card.querySelector('h2')?.textContent?.trim()||'Pez';
+      const qty=Math.max(1,Math.min(999,parseInt(card.querySelector('[data-qty-input]')?.value)||1));
+      return `🐟 ${name} x${qty}`;
+    });
+    const text=`Hola, estoy interesado en estas especies del catálogo ${nombre}:\\n\\n${lines.join("\\n")}\\n\\n¿Me pueden indicar disponibilidad y precio?`;
+    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+  });
+  document.getElementById('printBtn').addEventListener('click',()=>window.print());refresh();
+  <\/script></body></html>`);
+  w.document.close();
 }
 function abrirListaCliente(){
   const peces=[...seleccionadosCliente].map(id=>catalogo.find(p=>p.id===id)).filter(Boolean);
@@ -1023,7 +1114,20 @@ function abrirListaCliente(){
   <\/script></body></html>`);
   w.document.close();
 }
-$("customerCatalogBtn")?.addEventListener("click",abrirListaCliente);
+window.addEventListener("message",e=>{
+  if(e.data?.type==="clear-client-selection"){
+    seleccionadosCliente.clear();
+    cantidadesCliente.clear();
+    guardarSetLocal(CLIENT_SELECTION_KEY,seleccionadosCliente);
+    actualizarListaClienteUI();
+    render();
+  }
+});
+
+$("customerCatalogBtn")?.addEventListener("click",()=>{
+  if(vistaInterna) abrirListaCliente();
+  else abrirSeleccionCliente();
+});
 
 document.body.addEventListener("change",e=>{
   const input=e.target.closest("input[data-customer-select]");
