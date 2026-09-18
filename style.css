@@ -198,3 +198,66 @@ body.modal-open{overflow:hidden}
   .entry-right{min-width:0}
   .client-interest-btn{font-size:9px;padding:6px 8px}
 }
+
+
+/* ============================================================
+   EXPERIENCIA CLIENTE 2.0 — pedido simple y visual
+   ============================================================ */
+.client-tools,.client-welcome,.client-order-bar{display:none}
+.public-client .header-actions{display:none}
+.public-client .mode-hint{display:none}
+.public-client .stats-strip{display:none}
+.public-client .hero-row{padding:10px 0 14px}
+.public-client .hero-row h1{font-size:clamp(30px,5vw,46px);margin-bottom:7px}
+.public-client .hero-row p{font-size:14px;color:#5d7773}
+.public-client .hero-add{display:none}
+.public-client .toolbar{display:none}
+.public-client .aquarium-assistant{display:none}
+.public-client .results-head{margin-top:8px}
+.public-client .results-actions #favoritesToggle{display:none}
+.public-client .results-actions #clearFilters{display:none}
+.public-client .customer-catalog-btn{display:none}
+.public-client .list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.public-client .entry{border-left-width:0!important;border-top:4px solid;border-radius:18px;padding:0;overflow:hidden;background:#fff;box-shadow:0 6px 22px rgba(14,42,43,.07)}
+.public-client .entry-head{display:grid;grid-template-columns:1fr;min-height:0;padding:0;cursor:pointer}
+.public-client .entry-head .thumb{width:100%;height:220px;border-radius:0;background:#edf4f2}
+.public-client .entry-head .thumb img{width:100%;height:100%;object-fit:cover}
+.public-client .entry-head>div:nth-child(2){padding:13px 14px 7px}
+.public-client .entry-index{display:none}
+.public-client .entry-name{font-size:18px;font-weight:800}
+.public-client .entry-latin{font-size:10px;margin-top:2px}
+.public-client .badge-row{margin-top:7px}
+.public-client .entry-right{position:absolute;right:10px;top:10px;min-width:auto}
+.public-client .entry-actions-top{background:rgba(255,255,255,.93);border-radius:999px;padding:2px;box-shadow:0 3px 12px rgba(0,0,0,.08)}
+.public-client .entry-right .chevron{display:none}
+.public-client .client-card-action{padding:4px 14px 15px}
+.client-card-price{font-size:18px;font-weight:900;color:#173e40;margin-bottom:9px}
+.client-order-controls{display:flex;gap:8px;align-items:center}
+.client-add-btn{flex:1;border:1px solid #28765e;background:#fff;border-radius:11px;padding:11px 10px;color:#21654d;font-weight:900;font-size:12px;cursor:pointer}
+.client-add-btn.active{background:#28765e;color:#fff}
+.client-qty{display:flex;align-items:center;border:1px solid #cbded9;border-radius:11px;overflow:hidden;background:#f7fbfa}
+.client-qty button{width:34px;height:38px;border:0;background:transparent;font-size:21px;font-weight:800;color:#173e40;cursor:pointer}
+.client-qty b{min-width:28px;text-align:center;font-size:14px}
+.public-client .detail{padding-bottom:16px}
+.client-tools{display:flex;gap:10px;margin:4px 0 14px}
+.public-client .client-tools{display:flex}
+.client-tool{flex:1;border:1px solid #d5e3e0;background:#fff;border-radius:12px;padding:11px 12px;color:#315d59;font-weight:800;font-size:12px;cursor:pointer;box-shadow:0 3px 12px rgba(14,42,43,.04)}
+.client-tool.primary{background:#f4faf8;border-color:#b9d8cf}
+.client-welcome{position:relative;align-items:flex-start;gap:12px;margin:0 0 14px;padding:14px 42px 14px 14px;border:1px solid #d8e8e4;border-radius:16px;background:#f8fcfb;color:#365d59;box-shadow:0 4px 15px rgba(14,42,43,.05)}
+.public-client .client-welcome{display:flex}
+.client-welcome.hidden{display:none!important}
+.welcome-icon{font-size:25px}.client-welcome strong{font-size:14px;color:#173e40}.client-welcome p{margin:5px 0;font-size:11px;line-height:1.5}.client-welcome b{font-size:11px;color:#28765e}.client-welcome>button{position:absolute;right:10px;top:9px;border:0;background:none;color:#78918d;font-size:16px;cursor:pointer}
+.client-order-bar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(620px,calc(100% - 24px));z-index:50}
+.public-client .client-order-bar{display:block}
+.client-order-bar.hidden{display:none!important}
+.client-order-bar>button{width:100%;display:flex;align-items:center;gap:10px;border:0;border-radius:16px;padding:12px 14px;background:#173e40;color:#fff;box-shadow:0 10px 30px rgba(14,42,43,.22);cursor:pointer;text-align:left}
+.client-order-bar>button>span:first-child{font-size:24px}.client-order-bar b{display:block;font-size:13px}.client-order-bar small{display:block;color:#c9e2dd;font-size:10px;margin-top:2px}.client-order-bar strong{margin-left:auto;min-width:30px;height:30px;border-radius:50%;background:#fff;color:#173e40;display:grid;place-items:center;font-size:12px}
+.public-client .main{padding-bottom:92px}
+@media(max-width:950px){.public-client .list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.public-client .list{grid-template-columns:1fr 1fr;gap:10px}.public-client .entry-head .thumb{height:170px}.public-client .entry-name{font-size:15px}.public-client .entry-head>div:nth-child(2){padding:10px 10px 5px}.public-client .client-card-action{padding:3px 10px 11px}.client-add-btn{font-size:10px;padding:10px 7px}.client-qty button{width:30px}.client-qty b{min-width:23px}.client-tools{gap:7px}.client-tool{font-size:11px;padding:10px 7px}}
+@media(max-width:430px){.public-client .list{grid-template-columns:1fr}.public-client .entry-head .thumb{height:220px}.public-client .entry-name{font-size:18px}}
+
+/* Al abrir Buscar y opciones, se muestra el buscador y filtros existentes */
+.public-client .toolbar.client-tools-open{display:block;margin-top:4px}
+.public-client .toolbar.client-tools-open + .aquarium-assistant{display:none}
+.public-client .aquarium-assistant.client-assistant-open{display:block}

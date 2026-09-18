@@ -42,6 +42,17 @@
         <button id="heroAddBtn" class="hero-add internal-only" type="button">＋ Agregar especie</button>
       </section>
 
+      <section class="client-tools" aria-label="Opciones del catálogo para clientes">
+        <button id="clientSearchToggle" type="button" class="client-tool primary">🔎 Buscar y opciones</button>
+        <button id="clientAssistantToggle" type="button" class="client-tool">🧪 Ayúdame a elegir</button>
+      </section>
+
+      <div id="clientWelcome" class="client-welcome hidden">
+        <div class="welcome-icon">👋</div>
+        <div><strong>¿Cómo hacer tu pedido?</strong><p>1️⃣ Elige los peces que te gustan.<br>2️⃣ Indica la cantidad.<br>3️⃣ Revisa tu pedido.<br>4️⃣ Envíanoslo por WhatsApp.</p><b>¡Así de fácil!</b></div>
+        <button id="clientWelcomeClose" type="button" aria-label="Cerrar ayuda">✕</button>
+      </div>
+
       <section class="stats-strip" aria-label="Resumen del catálogo">
         <div class="summary-card">
           <span class="summary-icon">🐟</span>
@@ -134,6 +145,10 @@
     </main>
 
     <button id="fab" class="fab internal-only" type="button" title="Agregar especie" aria-label="Agregar especie">+</button>
+  </div>
+
+  <div id="clientOrderBar" class="client-order-bar hidden">
+    <button id="clientOrderBtn" type="button"><span>🛒</span><span><b>Mi pedido</b><small id="clientOrderSummary">Sin peces seleccionados</small></span><strong id="clientOrderCount">0</strong></button>
   </div>
 
   <div id="detailOverlay" class="detail-overlay hidden">

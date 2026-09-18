@@ -239,6 +239,8 @@ if(paramsPublicos.get("admin")==="1" && !esPaginaAdmin){
   window.location.replace(url.href);
 }
 
+document.body.classList.toggle("public-client",!accesoAdmin);
+
 if(!accesoAdmin){
   window.addEventListener("DOMContentLoaded",()=>{
     $("toggleView")?.classList.add("hidden");
@@ -543,7 +545,13 @@ function render(){
 function entryHtml(p,i){
   const zona=ZONAS[p.zona]||ZONAS.media, cuidado=CUIDADOS[p.cuidado]||CUIDADOS.facil;
   const open=expandido===p.id;
+  const selected=seleccionadosCliente.has(String(p.id));
   const price=vistaInterna?`<div class="price">${p.precio!=null&&p.precio!==""?`$${Number(p.precio||0).toLocaleString("es-CO")}`:"Consultar"}</div>`:"";
+  const clientPrice=!vistaInterna&&p.precio!=null&&p.precio!==""?`<div class="client-card-price">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"";
+  const clientAction=!vistaInterna?`<div class="client-order-controls">
+      <button type="button" class="client-add-btn ${selected?"active":""}" data-client-select="${p.id}">${selected?"✓ En mi pedido":"🛒 Agregar al pedido"}</button>
+      ${selected?`<div class="client-qty"><button type="button" data-client-qty-minus="${p.id}" aria-label="Disminuir cantidad">−</button><b>${cantidadCliente(p.id)}</b><button type="button" data-client-qty-plus="${p.id}" aria-label="Aumentar cantidad">+</button></div>`:""}
+    </div>`:"";
   return `<article class="entry" style="border-left-color:${zona.color}">
     <div class="entry-head" data-id="${p.id}">
       <div class="thumb">${p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun)}" loading="lazy">`:"🐟"}</div>
@@ -556,8 +564,9 @@ function entryHtml(p,i){
           <span class="badge" style="color:${cuidado.color};border-color:${cuidado.color}">${cuidado.label}</span>
         </div>
       </div>
-      <div class="entry-right"><div class="entry-actions-top">${!vistaInterna?`<button type="button" class="client-interest-btn ${seleccionadosCliente.has(String(p.id))?"active":""}" data-client-select="${p.id}" title="${seleccionadosCliente.has(String(p.id))?"Quitar de mi selección":"Agregar a mi selección"}">${seleccionadosCliente.has(String(p.id))?"✓ Me interesa":"＋ Me interesa"}</button>`:""}<button type="button" class="favorite-btn ${(vistaInterna?p.favorito:favoritosCliente.has(String(p.id)))?"active":""}" data-favorite="${p.id}" title="${p.favorito?"Quitar de favoritos":"Agregar a favoritos"}" aria-label="${p.favorito?"Quitar de favoritos":"Agregar de favoritos"}">${p.favorito?"★":"☆"}</button></div>${price}<span class="chevron ${open?"open":""}">▾</span></div>
+      <div class="entry-right"><div class="entry-actions-top">${!vistaInterna?`<button type="button" class="favorite-btn ${(favoritosCliente.has(String(p.id)))?"active":""}" data-favorite="${p.id}" title="${favoritosCliente.has(String(p.id))?"Quitar de favoritos":"Guardar favorito"}" aria-label="Favorito">${favoritosCliente.has(String(p.id))?"★":"☆"}</button>`:`<button type="button" class="favorite-btn ${p.favorito?"active":""}" data-favorite="${p.id}" title="${p.favorito?"Quitar de favoritos":"Agregar a favoritos"}" aria-label="${p.favorito?"Quitar de favoritos":"Agregar a favoritos"}">${p.favorito?"★":"☆"}</button>`}</div>${price}</div>
     </div>
+    ${!vistaInterna?`<div class="client-card-action">${clientPrice}${clientAction}</div>`:""}
     ${open?detailHtml(p):""}
   </article>`;
 }
@@ -624,7 +633,7 @@ function detailModalHtml(p){
   const price=p.precio!=null&&p.precio!==""?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"<div class=\"price-big\">Consultar</div>";
   const esFav=internal ? Boolean(p.favorito) : favoritosCliente.has(String(p.id));
   const favoriteAction=`<button class="detail-action favorite-detail ${esFav?"active":""}" data-detail-favorite="${p.id}">${esFav?"★ Quitar de favoritos":"☆ Agregar a favoritos"}</button>`;
-  const interestAction=!internal?`<button class="detail-action client-interest-detail ${seleccionadosCliente.has(String(p.id))?"active":""}" data-detail-select="${p.id}">${seleccionadosCliente.has(String(p.id))?"✓ Quitar de mi selección":"＋ Me interesa"}</button>`:"";
+  const interestAction=!internal?`<button class="detail-action client-interest-detail ${seleccionadosCliente.has(String(p.id))?"active":""}" data-detail-select="${p.id}">${seleccionadosCliente.has(String(p.id))?"✓ Quitar del pedido":"＋ Agregar al pedido"}</button>`:"";
   const actions=internal?`${favoriteAction}<button class="detail-action duplicate" data-detail-duplicate="${p.id}">📋 Duplicar ficha</button><button class="detail-action edit" data-detail-edit="${p.id}">✎ Editar</button><button class="detail-action danger" data-detail-delete="${p.id}">🗑 Eliminar</button>`:`${favoriteAction}${interestAction}`;
   const vars=String(p.variedades||"").split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);
   return `<div class="detail-hero">
@@ -853,9 +862,24 @@ document.body.addEventListener("click",e=>{
   const btn=e.target.closest("[data-client-select]");
   if(btn){
     e.stopImmediatePropagation();
-    actualizarSeleccionCliente(btn.dataset.clientSelect);
+    const id=btn.dataset.clientSelect;
+    const was=seleccionadosCliente.has(String(id));
+    actualizarSeleccionCliente(id);
+    if(!vistaInterna) banner(was?"Quitado de tu pedido.":"Agregado a tu pedido.","success");
     return;
   }
+  const plus=e.target.closest("[data-client-qty-plus]");
+  const minus=e.target.closest("[data-client-qty-minus]");
+  if(plus||minus){
+    e.stopImmediatePropagation();
+    const id=(plus||minus).dataset.clientQtyPlus||(plus||minus).dataset.clientQtyMinus;
+    if(!seleccionadosCliente.has(String(id))) actualizarSeleccionCliente(id,true);
+    const current=cantidadCliente(id);
+    setCantidadCliente(id,plus?current+1:current-1);
+    render();
+    return;
+  }
+
   const detailBtn=e.target.closest("[data-detail-select]");
   if(detailBtn){
     actualizarSeleccionCliente(detailBtn.dataset.detailSelect);
@@ -1022,15 +1046,20 @@ document.body.addEventListener("click",e=>{
 
 function actualizarListaClienteUI(){
   const n=seleccionadosCliente.size;
+  const unidades=totalUnidadesCliente([...seleccionadosCliente].map(id=>catalogo.find(p=>p.id===id)).filter(Boolean));
   const btn=$("customerCatalogBtn");
   const count=$("selectedCount");
   if(count)count.textContent=n;
   if(btn){
     btn.classList.toggle("has-selection",n>0);
-    btn.textContent=vistaInterna
-      ? `📋 Lista cliente ${n?`(${n})`:`(0)`}`
-      : `❤️ Mi selección${n?` (${n})`:""}`;
-    btn.setAttribute("aria-label",vistaInterna?"Crear lista de cliente":"Ver mis peces seleccionados");
+    btn.textContent=vistaInterna ? `📋 Lista cliente ${n?`(${n})`:`(0)`}` : `🛒 Mi pedido${n?` (${n})`:""}`;
+    btn.setAttribute("aria-label",vistaInterna?"Crear lista de cliente":"Ver mi pedido");
+  }
+  const bar=$("clientOrderBar"), orderCount=$("clientOrderCount"), summary=$("clientOrderSummary");
+  if(bar&&!vistaInterna){
+    bar.classList.toggle("hidden",n===0);
+    if(orderCount)orderCount.textContent=n;
+    if(summary)summary.textContent=n?`${unidades} unidad${unidades===1?"":"es"} · revisar y enviar`:"Sin peces seleccionados";
   }
 }
 function actualizarSeleccionCliente(id,forzar){
@@ -1187,6 +1216,24 @@ window.addEventListener("message",e=>{
     render();
   }
 });
+
+function initExperienciaCliente2(){
+  if(accesoAdmin)return;
+  const seen=localStorage.getItem("catalogoPecesV2_cliente_bienvenida2");
+  const welcome=$("clientWelcome");
+  if(welcome&&!seen)welcome.classList.remove("hidden");
+  $("clientWelcomeClose")?.addEventListener("click",()=>{localStorage.setItem("catalogoPecesV2_cliente_bienvenida2","1");welcome?.classList.add("hidden");});
+  $("clientSearchToggle")?.addEventListener("click",()=>{
+    const toolbar=document.querySelector(".toolbar");
+    if(toolbar){const open=toolbar.classList.toggle("client-tools-open"); $("clientSearchToggle").textContent=open?"✕ Cerrar opciones":"🔎 Buscar y opciones"; if(open)toolbar.scrollIntoView({behavior:"smooth",block:"start"});}
+  });
+  $("clientAssistantToggle")?.addEventListener("click",()=>{
+    const assistant=$("aquariumAssistant");
+    if(assistant){assistant.classList.add("client-assistant-open");assistant.scrollIntoView({behavior:"smooth",block:"start"});}
+  });
+  $("clientOrderBtn")?.addEventListener("click",abrirSeleccionCliente);
+}
+initExperienciaCliente2();
 
 $("customerCatalogBtn")?.addEventListener("click",()=>{
   if(vistaInterna) abrirListaCliente();
