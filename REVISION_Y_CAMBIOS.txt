@@ -1,0 +1,16 @@
+REVISIÓN DE CATÁLOGO DE PECES
+
+Cambios realizados en esta versión:
+1. Se actualizó la referencia de app.js de v=10/v=6 a v=11 en index.html, admin.html e index-favoritos.html para obligar al navegador a solicitar la versión actual del JavaScript y evitar que use una copia antigua en caché.
+2. Se incrementó la versión del caché del Service Worker de catalogo-peces-v2-15-categorias a catalogo-peces-v2-16-categorias para activar una renovación del caché.
+3. Se verificó la sintaxis de app.js y app-favoritos.js con Node.js: ambos pasan la comprobación de sintaxis.
+
+Diagnóstico:
+La línea que aparece en la captura (app.js:720, const price=...) es sintácticamente válida en el archivo entregado. Por ello, el error "Unexpected identifier 'price'" corresponde muy probablemente a una versión anterior/diferente de app.js que el navegador/GitHub Pages estaba ejecutando o tenía almacenada en caché.
+
+Para publicar:
+- Descomprime este ZIP.
+- Sube/reemplaza los archivos contenidos directamente en la carpeta raíz del repositorio de GitHub Pages.
+- Espera a que termine el despliegue de GitHub Pages.
+- Abre la página y haz una recarga fuerte (Ctrl+F5).
+- Si la PWA ya estaba instalada, ciérrala y vuelve a abrirla después de la actualización.
