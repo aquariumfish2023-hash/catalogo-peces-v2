@@ -1,4 +1,4 @@
-const CACHE = "catalogo-peces-v2-14-experiencia-cliente";
+const CACHE = "catalogo-peces-v2-15-categorias";
 const APP_SHELL = [
   "./",
   "./index.html",

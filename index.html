@@ -33,6 +33,18 @@
 
     <main class="main">
       <div id="modeHint" class="mode-hint">Modo administración</div>
+      <section id="categoryHome" class="category-home" aria-label="Categorías del catálogo">
+        <div class="category-home-head">
+          <div>
+            <div class="eyebrow">LOBOTA AQUARIUM FISH · CATÁLOGO</div>
+            <h1>¿Qué estás buscando?</h1>
+            <p>Elige una categoría para explorar nuestros productos.</p>
+          </div>
+        </div>
+        <div id="categoryGrid" class="category-grid"></div>
+      </section>
+      <div id="catalogContent" class="catalog-content">
+      <button id="categoryBackBtn" class="category-back hidden" type="button">← Volver a categorías</button>
       <section class="hero-row">
         <div>
           <div class="eyebrow">MI ACUARIO · CATÁLOGO PROFESIONAL</div>
@@ -42,7 +54,7 @@
         <button id="heroAddBtn" class="hero-add internal-only" type="button">＋ Agregar especie</button>
       </section>
 
-      <section class="client-tools" aria-label="Opciones del catálogo para clientes">
+      <section class="client-tools fish-only-ui" aria-label="Opciones del catálogo para clientes">
         <button id="clientSearchToggle" type="button" class="client-tool primary">🔎 Buscar y opciones</button>
         <button id="clientAssistantToggle" type="button" class="client-tool">🧪 Ayúdame a elegir</button>
       </section>
@@ -53,7 +65,7 @@
         <button id="clientWelcomeClose" type="button" aria-label="Cerrar ayuda">✕</button>
       </div>
 
-      <section class="stats-strip" aria-label="Resumen del catálogo">
+      <section class="stats-strip fish-only-ui" aria-label="Resumen del catálogo">
         <div class="summary-card">
           <span class="summary-icon">🐟</span>
           <div><strong id="totalCount">0</strong><small>Especies</small></div>
@@ -71,7 +83,7 @@
       <section class="toolbar">
         <div class="search-title-row">
           <div>
-            <div class="search-heading">🔎 Buscar una especie</div>
+            <div class="search-heading" id="searchHeading">🔎 Buscar en esta categoría</div>
             <div class="search-help">Busca por nombre, familia, variedad, origen o cualquier dato de la ficha.</div>
           </div>
           <span id="searchResultBadge" class="search-result-badge hidden"></span>
@@ -112,7 +124,7 @@
         </div>
       </section>
 
-      <section class="aquarium-assistant" id="aquariumAssistant">
+      <section class="aquarium-assistant fish-only-ui" id="aquariumAssistant">
         <div class="assistant-head">
           <div><div class="assistant-eyebrow">MI ACUARIO · ASISTENTE</div><h2>🧪 Encuentra peces para tu acuario</h2><p>Introduce las condiciones de tu acuario y consulta qué especies de tu catálogo encajan con esos parámetros.</p></div>
           <button id="assistantToggle" class="assistant-toggle" type="button" aria-expanded="true">Ocultar</button>
@@ -142,6 +154,7 @@
       </section>
 
       <div class="list" id="list"></div>
+      </div>
     </main>
 
     <button id="fab" class="fab internal-only" type="button" title="Agregar especie" aria-label="Agregar especie">+</button>
@@ -178,6 +191,6 @@
     </div>
   </div>
 
-  <script type="module" src="app.js?v=9"></script>
+  <script type="module" src="app.js?v=10"></script>
 </body>
 </html>

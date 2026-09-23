@@ -219,6 +219,15 @@ const CUIDADOS = {
   medio:{label:"Medio",color:"#C9A23D"},
   dificil:{label:"Difícil",color:"#B35B4A"}
 };
+const CATEGORIAS = {
+  peces:{label:"Peces",icon:"🐟",sub:"Peces de agua dulce",color:"#4A90A4"},
+  accesorios:{label:"Accesorios",icon:"🧰",sub:"Todo para el día a día",color:"#C97B3D"},
+  alimentos:{label:"Alimentos",icon:"🍽️",sub:"Alimentación para tus peces",color:"#7A9B5A"},
+  decoracion:{label:"Decoración",icon:"🪨",sub:"Dale vida a tu acuario",color:"#8B6F8E"},
+  filtros:{label:"Filtros",icon:"💧",sub:"Filtración y repuestos",color:"#4F86A6"},
+  iluminacion:{label:"Iluminación",icon:"💡",sub:"Luces y accesorios",color:"#C69A35"},
+  otros:{label:"Otros",icon:"📦",sub:"Más productos",color:"#6C7B7D"}
+};
 
 const $ = id => document.getElementById(id);
 const STORE_NAME_KEY = "catalogoPeces.storeName";
@@ -227,10 +236,12 @@ const MAX_FIRESTORE_IMAGE_BYTES = 500 * 1024;
 
 let catalogo=[], busqueda="", filtroZona=null, filtroCuidado=null, soloFavoritos=false;
 let filtroFamilia="", filtroTemperamento="", filtroTamano="", filtroTemp="", filtroPh="", filtroAcuario="";
+let categoriaActual=null;
 let expandido=null, vistaInterna=true, editando=null, fotoTemp=null;
 const paramsPublicos=new URLSearchParams(window.location.search);
 const esPaginaAdmin=window.location.pathname.endsWith("/admin.html") || window.location.pathname.endsWith("admin.html");
 const accesoAdmin=esPaginaAdmin || paramsPublicos.get("admin")==="1";
+categoriaActual=accesoAdmin?"peces":null;
 
 // Compatibilidad: si alguien conserva el antiguo enlace ?admin=1 en index.html,
 // lo llevamos a la nueva página administrativa. El catálogo público nunca muestra login.
@@ -287,16 +298,18 @@ function safeNumber(id){
 }
 function validarDatos(d){
   const e=[];
-  if(!d.nombreComun)e.push("falta el nombre común");
-  if(!d.nombreCientifico)e.push("falta el nombre científico");
+  if(!d.nombreComun)e.push("falta el nombre del producto");
+  if(d.categoria==="peces" && !d.nombreCientifico)e.push("falta el nombre científico");
   for(const [label,v] of [["Tamaño adulto",d.tamanoCm],["Longevidad",d.longevidadAnios],["Acuario mínimo",d.acuarioMinL],["Precio",d.precio]]){
     if(v!==null&&(!Number.isFinite(v)||v<0))e.push(`${label} inválido`);
   }
-  if(d.cardumenMin!==null&&(!Number.isFinite(d.cardumenMin)||d.cardumenMin<1))e.push("el grupo mínimo debe ser al menos 1");
-  if(d.phMin!==null&&(!Number.isFinite(d.phMin)||d.phMin<0||d.phMin>14))e.push("pH mínimo fuera de rango");
-  if(d.phMax!==null&&(!Number.isFinite(d.phMax)||d.phMax<0||d.phMax>14))e.push("pH máximo fuera de rango");
-  if(d.phMin!==null&&d.phMax!==null&&d.phMin>d.phMax)e.push("pH mínimo mayor que pH máximo");
-  if(d.tempMinC!==null&&d.tempMaxC!==null&&d.tempMinC>d.tempMaxC)e.push("temperatura mínima mayor que temperatura máxima");
+  if(d.categoria==="peces"){
+    if(d.cardumenMin!==null&&(!Number.isFinite(d.cardumenMin)||d.cardumenMin<1))e.push("el grupo mínimo debe ser al menos 1");
+    if(d.phMin!==null&&(!Number.isFinite(d.phMin)||d.phMin<0||d.phMin>14))e.push("pH mínimo fuera de rango");
+    if(d.phMax!==null&&(!Number.isFinite(d.phMax)||d.phMax<0||d.phMax>14))e.push("pH máximo fuera de rango");
+    if(d.phMin!==null&&d.phMax!==null&&d.phMin>d.phMax)e.push("pH mínimo mayor que pH máximo");
+    if(d.tempMinC!==null&&d.tempMaxC!==null&&d.tempMinC>d.tempMaxC)e.push("temperatura mínima mayor que temperatura máxima");
+  }
   return e.length?"Revisa: "+e.join(", ")+".":"";
 }
 
@@ -338,7 +351,7 @@ function iniciarSuscripcion(esAdmin=false){
   unsubscribeCatalogo=onSnapshot(
     fuente,
     snap=>{
-      catalogo=snap.docs.map(d=>({id:d.id,...d.data()}))
+      catalogo=snap.docs.map(d=>({id:d.id,categoria:"peces",...d.data(),categoria:d.data().categoria||"peces"}))
         .sort((a,b)=>String(a.nombreComun||"").localeCompare(String(b.nombreComun||""),"es"));
       banner(""); render();
     },
@@ -379,7 +392,7 @@ function normalizarTexto(value){
   return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 }
 function textoBusquedaPez(p){
-  return normalizarTexto([p.nombreComun,p.nombreCientifico,p.familia,p.variedades,p.origen,p.alimentacion,p.compatibilidad,p.notas].filter(Boolean).join(" "));
+  return normalizarTexto([p.nombreComun,p.nombreCientifico,p.categoria,CATEGORIAS[p.categoria]?.label,p.familia,p.variedades,p.origen,p.alimentacion,p.compatibilidad,p.notas].filter(Boolean).join(" "));
 }
 function tokensBusqueda(value){
   return normalizarTexto(value).split(/\s+/).filter(Boolean);
@@ -409,6 +422,7 @@ function relevanciaBusqueda(p,value){
 }
 function filtradosActuales(){
   return catalogo.filter(p=>{
+    if(categoriaActual && p.categoria!==categoriaActual && !(categoriaActual==="peces" && !p.categoria))return false;
     if(!coincideBusqueda(p,busqueda))return false;
     if(filtroZona&&p.zona!==filtroZona)return false;
     if(filtroCuidado&&p.cuidado!==filtroCuidado)return false;
@@ -515,14 +529,74 @@ function renderAsistente(){
   }
 }
 
+function renderCategoryHome(){
+  const grid=$("categoryGrid");
+  if(!grid)return;
+  grid.innerHTML=Object.entries(CATEGORIAS).map(([key,c])=>{
+    const count=catalogo.filter(p=>(p.categoria||"peces")===key).length;
+    return `<button type="button" class="category-card" data-category="${key}" style="--category-accent:${c.color}">
+      <span class="category-icon">${c.icon}</span>
+      <span class="category-name">${c.label}</span>
+      <span class="category-sub">${c.sub}</span>
+      <span class="category-count">${count} ${count===1?"producto":"productos"}</span>
+      <span class="category-arrow">→</span>
+    </button>`;
+  }).join("");
+}
+function actualizarVistaCategoria(){
+  const home=$("categoryHome"), content=$("catalogContent"), back=$("categoryBackBtn");
+  const homeVisible=!categoriaActual;
+  home?.classList.toggle("hidden",!homeVisible);
+  content?.classList.toggle("hidden",homeVisible);
+  back?.classList.toggle("hidden",homeVisible);
+  document.body.classList.toggle("category-home-active",homeVisible);
+  document.querySelectorAll(".fish-only-ui").forEach(el=>el.classList.toggle("hidden",categoriaActual!=="peces"));
+  const fish= categoriaActual==="peces";
+  document.querySelectorAll(".toolbar-label,.filter-row,.advanced-filter-head,.advanced-filters-panel,.quick-searches").forEach(el=>el.classList.toggle("hidden",!fish));
+  const heading=$("searchHeading");
+  if(heading) heading.textContent=fish?"🔎 Buscar una especie":"🔎 Buscar en "+(CATEGORIAS[categoriaActual]?.label||"esta categoría");
+  const help=document.querySelector(".search-help");
+  if(help) help.textContent=fish?"Busca por nombre, familia, variedad, origen o cualquier dato de la ficha.":"Busca por nombre o cualquier dato del producto.";
+  const heroTitle=document.querySelector(".hero-row h1");
+  const heroP=document.querySelector(".hero-row p");
+  if(heroTitle&&categoriaActual){
+    heroTitle.textContent=CATEGORIAS[categoriaActual]?.label||"Catálogo";
+    heroP.textContent=CATEGORIAS[categoriaActual]?.sub||"Explora nuestros productos.";
+  }
+}
+function abrirCategoria(key){
+  if(!CATEGORIAS[key])return;
+  categoriaActual=key;
+  busqueda=""; expandido=null;
+  filtroZona=filtroCuidado=null;
+  filtroFamilia=filtroTemperamento=filtroTamano=filtroTemp=filtroPh=filtroAcuario="";
+  $("searchInput").value="";
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function volverCategorias(){
+  categoriaActual=null;
+  busqueda=""; expandido=null;
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
 function render(){
+  renderCategoryHome();
+  actualizarVistaCategoria();
+  if(!categoriaActual){
+    actualizarListaClienteUI();
+    return;
+  }
   const filtrados=filtradosActuales();
   if($("toggleView")) $("toggleView").textContent=vistaInterna?"👁 Modo cliente":"🔐 Modo administración";
+  if($("heroAddBtn")) $("heroAddBtn").textContent=categoriaActual==="peces"?"＋ Agregar especie":"＋ Agregar producto";
+  if($("fab")) $("fab").title=categoriaActual==="peces"?"Agregar especie":"Agregar producto";
   const customerBtn=$("customerCatalogBtn");
   if(customerBtn) customerBtn.style.display="";
   actualizarListaClienteUI();
-  $("countRow").textContent=`${filtrados.length} ${filtrados.length===1?"especie":"especies"} mostradas`;
-  $("totalCount").textContent=catalogo.length;
+  $("countRow").textContent=`${filtrados.length} ${filtrados.length===1?"producto":"productos"} mostrados`;
+  $("totalCount").textContent=catalogo.filter(p=>(p.categoria||"peces")==="peces").length;
   $("familyCount").textContent=new Set(catalogo.map(p=>String(p.familia||"").trim().toLowerCase()).filter(Boolean)).size;
   $("waterCount").textContent=new Set(catalogo.map(p=>p.zona).filter(Boolean)).size;
   $("clearSearch").classList.toggle("hidden",!busqueda);
@@ -535,7 +609,7 @@ function render(){
   const modeHint=$("modeHint");
   if(modeHint) modeHint.textContent=vistaInterna?"Modo administración":"Modo cliente · solo consulta";
   if(!filtrados.length){
-    $("list").innerHTML=`<div class="empty">${catalogo.length?`No encontramos coincidencias para <strong>“${escapeHtml(busqueda)}”</strong>. Prueba con el nombre, una variedad o una familia.`:"Aún no tienes especies en el catálogo. Pulsa “＋ Agregar especie” para comenzar."}</div>`;
+    $("list").innerHTML=`<div class="empty">${catalogo.length?`No encontramos coincidencias para <strong>“${escapeHtml(busqueda)}”</strong>. Prueba con otro nombre o término.`:`Aún no tienes productos en esta categoría. Pulsa “＋ Agregar producto” para comenzar.`}</div>`;
     renderSearchSuggestions();
     return;
   }
@@ -543,6 +617,8 @@ function render(){
   renderSearchSuggestions();
 }
 function entryHtml(p,i){
+  const catKey=p.categoria||"peces";
+  const cat=CATEGORIAS[catKey]||CATEGORIAS.peces;
   const zona=ZONAS[p.zona]||ZONAS.media, cuidado=CUIDADOS[p.cuidado]||CUIDADOS.facil;
   const open=expandido===p.id;
   const selected=seleccionadosCliente.has(String(p.id));
@@ -552,17 +628,17 @@ function entryHtml(p,i){
       <button type="button" class="client-add-btn ${selected?"active":""}" data-client-select="${p.id}">${selected?"✓ En mi pedido":"🛒 Agregar al pedido"}</button>
       ${selected?`<div class="client-qty"><button type="button" data-client-qty-minus="${p.id}" aria-label="Disminuir cantidad">−</button><b>${cantidadCliente(p.id)}</b><button type="button" data-client-qty-plus="${p.id}" aria-label="Aumentar cantidad">+</button></div>`:""}
     </div>`:"";
-  return `<article class="entry" style="border-left-color:${zona.color}">
+  const meta=catKey==="peces"
+    ? `<span class="badge" style="color:${zona.color};border-color:${zona.color}">${zona.label}</span><span class="badge" style="color:${cuidado.color};border-color:${cuidado.color}">${cuidado.label}</span>`
+    : `<span class="badge category-badge" style="color:${cat.color};border-color:${cat.color}">${cat.icon} ${cat.label}</span>`;
+  return `<article class="entry product-entry" style="border-left-color:${cat.color}">
     <div class="entry-head" data-id="${p.id}">
-      <div class="thumb">${p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun)}" loading="lazy">`:"🐟"}</div>
+      <div class="thumb">${p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun)}" loading="lazy">`:`<span class="thumb-placeholder">${cat.icon}</span>`}</div>
       <div>
         <div class="entry-index">${String(i+1).padStart(2,"0")}</div>
         <div class="entry-name">${resaltar(p.nombreComun,busqueda)}</div>
-        <div class="entry-latin">${resaltar(p.nombreCientifico,busqueda)}</div>
-        <div class="badge-row">
-          <span class="badge" style="color:${zona.color};border-color:${zona.color}">${zona.label}</span>
-          <span class="badge" style="color:${cuidado.color};border-color:${cuidado.color}">${cuidado.label}</span>
-        </div>
+        ${p.nombreCientifico?`<div class="entry-latin">${resaltar(p.nombreCientifico,busqueda)}</div>`:""}
+        <div class="badge-row">${meta}</div>
       </div>
       <div class="entry-right"><div class="entry-actions-top">${!vistaInterna?`<button type="button" class="favorite-btn ${(favoritosCliente.has(String(p.id)))?"active":""}" data-favorite="${p.id}" title="${favoritosCliente.has(String(p.id))?"Quitar de favoritos":"Guardar favorito"}" aria-label="Favorito">${favoritosCliente.has(String(p.id))?"★":"☆"}</button>`:`<button type="button" class="favorite-btn ${p.favorito?"active":""}" data-favorite="${p.id}" title="${p.favorito?"Quitar de favoritos":"Agregar a favoritos"}" aria-label="${p.favorito?"Quitar de favoritos":"Agregar a favoritos"}">${p.favorito?"★":"☆"}</button>`}</div>${price}</div>
     </div>
@@ -571,9 +647,21 @@ function entryHtml(p,i){
   </article>`;
 }
 function detailHtml(p){
+  const catKey=p.categoria||"peces", cat=CATEGORIAS[catKey]||CATEGORIAS.peces;
   const photo=p.foto?`<img src="${escapeHtml(p.foto)}" class="detail-photo" alt="${escapeHtml(p.nombreComun)}" loading="lazy">`:"";
   const favoriteAction=`<button class="detail-action favorite-detail ${p.favorito?"active":""}" data-detail-favorite="${p.id}">${p.favorito?"★ Quitar de favoritos":"☆ Agregar a favoritos"}</button>`;
   const actions=vistaInterna?`<div class="actions-row"><button class="edit-btn" data-edit="${p.id}">✎ Editar</button><button class="del-btn" data-del="${p.id}">🗑 Eliminar</button></div>`:"";
+  if(catKey!=="peces"){
+    const price=p.precio!=null&&p.precio!==""?`$${Number(p.precio||0).toLocaleString("es-CO")}`:"Consultar";
+    return `<div class="detail">${photo}<div class="detail-favorite-row">${favoriteAction}</div>
+      <div class="product-detail-category">${cat.icon} ${cat.label}</div>
+      <h3 class="product-detail-title">${escapeHtml(p.nombreComun||"Sin nombre")}</h3>
+      <div class="product-detail-price">${price}</div>
+      ${p.notas?line("Descripción",p.notas):""}
+      ${p.origen?line("Marca / referencia",p.origen):""}
+      ${actions}
+    </div>`;
+  }
   return `<div class="detail">${photo}
     <div class="detail-favorite-row">${favoriteAction}</div>
     <div class="stat-grid">
@@ -625,6 +713,28 @@ function generarConsejo(p){
   return `Antes de incorporarlo, revisa que el acuario tenga condiciones de agua, espacio y compañeros adecuados para ${nombre}.`;
 }
 function detailModalHtml(p){
+  const catKey=p.categoria||"peces";
+  if(catKey!=="peces"){
+    const cat=CATEGORIAS[catKey]||CATEGORIAS.peces;
+    const photo=p.foto?`<img class="detail-hero-photo" src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun||"Producto")}">`:`<div class="detail-hero-placeholder">${cat.icon}</div>`;
+    const price=p.precio!=null&&p.precio!==""?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"<div class="price-big">Consultar</div>";
+    const internal=vistaInterna;
+    const esFav=internal?Boolean(p.favorito):favoritosCliente.has(String(p.id));
+    const favoriteAction=`<button class="detail-action favorite-detail ${esFav?"active":""}" data-detail-favorite="${p.id}">${esFav?"★ Quitar de favoritos":"☆ Agregar a favoritos"}</button>`;
+    const interestAction=!internal?`<button class="detail-action client-interest-detail ${seleccionadosCliente.has(String(p.id))?"active":""}" data-detail-select="${p.id}">${seleccionadosCliente.has(String(p.id))?"✓ Quitar del pedido":"＋ Agregar al pedido"}</button>`:"";
+    const actions=internal?`${favoriteAction}<button class="detail-action duplicate" data-detail-duplicate="${p.id}">📋 Duplicar producto</button><button class="detail-action edit" data-detail-edit="${p.id}">✎ Editar</button><button class="detail-action danger" data-detail-delete="${p.id}">🗑 Eliminar</button>`:`${favoriteAction}${interestAction}`;
+    return `<div class="detail-hero">
+      <div class="detail-gallery"><div class="detail-main-photo">${photo}</div></div>
+      <div class="detail-intro">
+        <div class="detail-eyebrow">${cat.icon} ${cat.label.toUpperCase()}</div>
+        <div class="detail-title-row"><div><h2 id="detailTitle">${escapeHtml(p.nombreComun||"Sin nombre")}</h2></div></div>
+        ${price}
+        ${p.notas?`<div class="detail-line"><b>Descripción:</b><span>${escapeHtml(p.notas)}</span></div>`:""}
+        ${p.origen?`<div class="detail-line"><b>Marca / referencia:</b><span>${escapeHtml(p.origen)}</span></div>`:""}
+        <div class="detail-actions">${actions}</div>
+      </div>
+    </div>`;
+  }
   const zona=ZONAS[p.zona]||ZONAS.media;
   const cuidado=CUIDADOS[p.cuidado]||CUIDADOS.facil;
   const photo=p.foto?`<img class="detail-hero-photo" src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun||"Pez")}">`:`<div class="detail-hero-placeholder">🐟</div>`;
@@ -1063,7 +1173,7 @@ function actualizarListaClienteUI(){
     if(orderCount)orderCount.textContent=n;
     if(summary)summary.textContent=n
       ? `${unidades} unidad${unidades===1?"":"es"} · ${total>0?"Total: $"+total.toLocaleString("es-CO"):"Total por confirmar"}`
-      : "Sin peces seleccionados";
+      : "Sin productos seleccionados";
   }
 }
 function actualizarSeleccionCliente(id,forzar){
@@ -1086,7 +1196,7 @@ function setCantidadCliente(id,value){
 function totalUnidadesCliente(peces){return peces.reduce((sum,p)=>sum+cantidadCliente(p.id),0);}
 function totalPrecioCliente(peces){return peces.reduce((sum,p)=>sum+(Number(p.precio)||0)*cantidadCliente(p.id),0);}
 function htmlCliente(p,index){
-  const foto=p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun||"Pez")}">`:`<div class="no-photo">🐟</div>`;
+  const foto=p.foto?`<img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun||"Pez")}">`:`<div class="no-photo">${(CATEGORIAS[p.categoria||"peces"]||CATEGORIAS.peces).icon}</div>`;
   const precio=(p.precio!==null&&p.precio!==undefined&&p.precio!=="")?`<div class="customer-price">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"";
   const cuidado=escapeHtml((CUIDADOS[p.cuidado]||{}).label||"Consultar");
   const temp=(p.tempMinC!=null||p.tempMaxC!=null)?`${p.tempMinC??"—"}–${p.tempMaxC??"—"} °C`:"Consultar";
@@ -1261,6 +1371,12 @@ $("toggleView").addEventListener("click",()=>{
 $("fab").addEventListener("click",()=>openModal(null));
 $("heroAddBtn").addEventListener("click",()=>openModal(null));
 
+document.body.addEventListener("click",e=>{
+  const cat=e.target.closest("[data-category]");
+  if(cat){abrirCategoria(cat.dataset.category);return;}
+});
+$("categoryBackBtn")?.addEventListener("click",volverCategorias);
+
 const CAMPOS_VACIOS={
   nombreComun:"",nombreCientifico:"",familia:"",zona:"media",temperamento:"pacifico",cuidado:"facil",
   tamanoCm:"",phMin:"",phMax:"",tempMinC:"",tempMaxC:"",acuarioMinL:"",cardumenMin:"",
@@ -1279,8 +1395,8 @@ function duplicarPez(pez){
 function openModal(pez, modo="editar"){
   editando=modo==="duplicar"?null:(pez||null);
   fotoTemp=pez?pez.foto||null:null;
-  const formulario=modo==="duplicar"&&pez?{...pez,id:undefined,favorito:false}:(pez||CAMPOS_VACIOS);
-  $("modalTitle").textContent=modo==="duplicar"?"Duplicar especie":(pez?"Editar especie":"Agregar especie");
+  const formulario=modo==="duplicar"&&pez?{...pez,id:undefined,favorito:false}:(pez?pez:{...CAMPOS_VACIOS,categoria:categoriaActual||"peces"});
+  $("modalTitle").textContent=modo==="duplicar"?"Duplicar producto":(pez?((pez.categoria||"peces")==="peces"?"Editar especie":"Editar producto"):"Agregar producto");
   $("modalBody").innerHTML=formHtml(formulario);
   $("modalOverlay").classList.remove("hidden");
   $("fotoInput").addEventListener("change",handleFotoChange);
@@ -1295,6 +1411,8 @@ function openModal(pez, modo="editar"){
     }
   });
   $("nombreCientifico").addEventListener("input",validarForm);
+  $("categoria").addEventListener("change",actualizarFormularioCategoria);
+  actualizarFormularioCategoria();
   $("autoFillBtn").addEventListener("click",intentarCompletarFicha);
   validarForm();
 }
@@ -1313,12 +1431,15 @@ function formHtml(f){
     </label>
     ${f.foto?`<button type="button" class="remove-photo-btn" id="removeFotoBtn">Quitar foto</button>`:""}
   </div>
+  <div class="field"><div class="field-label">Categoría *</div>
+    <select id="categoria">${Object.entries(CATEGORIAS).map(([k,v])=>`<option value="${k}" ${(f.categoria||"peces")===k?"selected":""}>${v.icon} ${v.label}</option>`).join("")}</select>
+  </div>
   <div class="field"><div class="field-label">Nombre común *</div>
     <input id="nombreComun" list="pecesSugeridos" value="${escapeHtml(f.nombreComun)}" placeholder="Ej. Betta, Guppy, Pez ángel" autocomplete="off">
     <datalist id="pecesSugeridos">${FICHAS_BASE.map(x=>`<option value="${escapeHtml(x.nombreComun)}">`).join("")}</datalist>
     <div class="auto-fill-tools"><button type="button" id="autoFillBtn" class="auto-fill-btn">✨ Completar datos</button><div id="autoFillStatus" class="auto-fill-status"></div></div>
   </div>
-  <div class="field"><div class="field-label">Nombre científico *</div><input id="nombreCientifico" value="${escapeHtml(f.nombreCientifico)}" placeholder="Ej. Pterophyllum scalare"></div>
+  <div id="fishFields" class="fish-fields">\n  <div class="field"><div class="field-label">Nombre científico *</div><input id="nombreCientifico" value="${escapeHtml(f.nombreCientifico)}" placeholder="Ej. Pterophyllum scalare"></div>
   <div class="field"><div class="field-label">Familia</div><input id="familia" value="${escapeHtml(f.familia)}" placeholder="Ej. Cichlidae"></div>
   <div class="row-2"><div class="field"><div class="field-label">Zona de nado</div><select id="zona">${sel(ZONAS,f.zona)}</select></div>
   <div class="field"><div class="field-label">Temperamento</div><select id="temperamento">${sel(TEMPERAMENTOS,f.temperamento)}</select></div></div>
@@ -1335,12 +1456,21 @@ function formHtml(f){
   <div class="field"><div class="field-label">Alimentación</div><textarea id="alimentacion" rows="2">${escapeHtml(f.alimentacion)}</textarea></div>
   <div class="field"><div class="field-label">Compatibilidad</div><textarea id="compatibilidad" rows="2">${escapeHtml(f.compatibilidad)}</textarea></div>
   <div class="field"><div class="field-label">Origen</div><input id="origen" value="${escapeHtml(f.origen)}"></div>
-  <div class="field"><div class="field-label">Variedades comunes</div><input id="variedades" value="${escapeHtml(f.variedades||"")}" placeholder="Ej. Media luna, Corona, Velo"></div>
-  <div class="field"><div class="field-label">Precio de venta ($)</div><input type="number" min="0" step="100" id="precio" value="${f.precio}" placeholder="Ej. 25000"></div>
-  <div class="field"><div class="field-label">Notas internas</div><textarea id="notas" rows="2">${escapeHtml(f.notas)}</textarea></div>`;
+  <div class="field"><div class="field-label">Variedades comunes</div><input id="variedades" value="${escapeHtml(f.variedades||"")}" placeholder="Ej. Media luna, Corona, Velo"></div></div>
+  <div class="field"><div class="field-label">Precio de venta (COP)</div><input type="number" min="0" step="100" id="precio" value="${f.precio}" placeholder="Ej. 25000"></div>
+  <div class="field"><div class="field-label">Descripción / notas</div><textarea id="notas" rows="3">${escapeHtml(f.notas)}</textarea></div>`;
+}
+function actualizarFormularioCategoria(){
+  const cat=$("categoria")?.value||"peces";
+  const fish=$("fishFields");
+  if(fish) fish.classList.toggle("hidden",cat!=="peces");
+  const title=$("modalTitle");
+  if(title && !editando) title.textContent=cat==="peces"?"Agregar especie":"Agregar producto";
+  validarForm();
 }
 function validarForm(){
-  const ok=$("nombreComun").value.trim()&&$("nombreCientifico").value.trim();
+  const cat=$("categoria")?.value||"peces";
+  const ok=$("nombreComun").value.trim()&&(cat!=="peces"||$("nombreCientifico").value.trim());
   $("saveBtn").disabled=!ok||guardando;
 }
 function handleFotoChange(e){
@@ -1387,6 +1517,7 @@ $("saveBtn").addEventListener("click",async()=>{
   const num=safeNumber;
   const datos={
     ownerUid:usuarioActual?.uid||"",
+    categoria:$("categoria")?.value||"peces",
     nombreComun:$("nombreComun").value.trim(),
     nombreCientifico:$("nombreCientifico").value.trim(),
     familia:$("familia").value.trim(),
