@@ -740,7 +740,7 @@ function detailModalHtml(p){
   const photo=p.foto?`<img class="detail-hero-photo" src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun||"Pez")}">`:`<div class="detail-hero-placeholder">🐟</div>`;
   const thumbs=p.foto?`<div class="detail-thumb active">${photo.replace('class="detail-hero-photo"','class="detail-thumb-img"')}</div>`:"";
   const internal=vistaInterna;
-  const price=p.precio!=null&&p.precio!==""?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"<div class=\"price-big\">Consultar</div>";
+  const price=p.precio!=null&&p.precio!=""?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:'<div class="price-big">Consultar</div>';
   const esFav=internal ? Boolean(p.favorito) : favoritosCliente.has(String(p.id));
   const favoriteAction=`<button class="detail-action favorite-detail ${esFav?"active":""}" data-detail-favorite="${p.id}">${esFav?"★ Quitar de favoritos":"☆ Agregar a favoritos"}</button>`;
   const interestAction=!internal?`<button class="detail-action client-interest-detail ${seleccionadosCliente.has(String(p.id))?"active":""}" data-detail-select="${p.id}">${seleccionadosCliente.has(String(p.id))?"✓ Quitar del pedido":"＋ Agregar al pedido"}</button>`:"";
