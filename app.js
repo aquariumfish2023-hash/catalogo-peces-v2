@@ -717,7 +717,7 @@ function detailModalHtml(p){
   if(catKey!=="peces"){
     const cat=CATEGORIAS[catKey]||CATEGORIAS.peces;
     const photo=p.foto?`<img class="detail-hero-photo" src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.nombreComun||"Producto")}">`:`<div class="detail-hero-placeholder">${cat.icon}</div>`;
-    const price=p.precio!=null&&p.precio!==""?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"<div class="price-big">Consultar</div>';
+    const price=p.precio!=null&&p.precio!==""?`<div class="price-big">$${Number(p.precio||0).toLocaleString("es-CO")}</div>`:"<div class="price-big">Consultar</div>";
     const internal=vistaInterna;
     const esFav=internal?Boolean(p.favorito):favoritosCliente.has(String(p.id));
     const favoriteAction=`<button class="detail-action favorite-detail ${esFav?"active":""}" data-detail-favorite="${p.id}">${esFav?"★ Quitar de favoritos":"☆ Agregar a favoritos"}</button>`;
